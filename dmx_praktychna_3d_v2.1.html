@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DMX-пульт: практична робота</title>
+<style>
+:root{--bg:#2b2f39;--panel:#353a46;--panel2:#3f4552;--line:#535a69;--text:#dcdfe6;--muted:#aab0bf;--acc:#f0a830;--ok:#4cc38a;--bad:#ff6b6b;--info:#5aa9ff}
+*{box-sizing:border-box}
+html{scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 0}
+.hrow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+h1{font-size:20px;margin:0;font-weight:600}
+h2{font-size:18px;margin:22px 0 10px}
+h3{font-size:16px;margin:18px 0 8px}
+.sub{color:var(--muted);font-size:13px}
+.who{display:flex;flex-wrap:wrap;gap:8px}
+.who label{display:flex;flex-direction:column;font-size:12px;color:var(--muted)}
+.who{align-items:flex-end}
+.who .wipe{align-self:flex-end;white-space:nowrap}
+input,select,button,textarea{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--info);outline-offset:0}
+input.bad{border-color:var(--bad)}
+button{cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.pri{background:var(--acc);color:#1b1300;border-color:var(--acc);font-weight:600}
+button.go{background:#2e7d4f;border-color:#3fa267;font-weight:600}
+button.danger{border-color:#b05050}
+button.armed{background:#9a2c2c!important;border-color:var(--bad)!important;color:#fff!important}
+button.sm{padding:3px 8px;font-size:13px}
+.stagebox{margin:14px 0 0;position:relative}
+#stage{width:100%;display:block;border-radius:10px;background:#07070a;border:1px solid var(--line)}
+.stagebar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px;color:var(--muted);margin-top:6px}
+.stagebar label{display:flex;gap:6px;align-items:center}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0;padding:8px 0 10px;border-bottom:3px solid var(--acc);position:sticky;top:0;z-index:400;background:var(--bg)}
+nav.tabs button{border:1px solid #626a7c;border-radius:8px;background:#454b5a;padding:10px 18px;color:var(--text);font-weight:600;font-size:15px}
+nav.tabs button:hover{background:#525969;border-color:var(--acc)}
+nav.tabs button.on{background:var(--acc);border-color:var(--acc);color:#1b1300}
+nav.tabs button .soon{font-size:11px;color:var(--muted);margin-left:4px}
+.tab{display:none;padding:6px 0 30px}
+.tab.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle;font-size:14px}
+th{color:var(--muted);font-weight:500;font-size:13px}
+tr.sel td{background:#4a5163}
+.tblwrap{overflow-x:auto}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--acc)}
+.ico{display:inline-block;min-width:1.3em;margin-right:4px;font-weight:900;font-size:1.25em;line-height:1;text-align:center}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+#umap{display:grid;grid-template-columns:repeat(32,1fr);gap:2px;margin-top:8px}
+#umap div{aspect-ratio:1;background:#4a5060;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:4px}
+.dip{display:flex;gap:4px;margin:10px 0}
+.dip .sw{width:26px;text-align:center;font-size:11px;color:var(--muted)}
+.dip .sw b{display:block;height:38px;border:1px solid var(--line);border-radius:4px;background:#2f343f;position:relative;margin-bottom:2px}
+.dip .sw b::after{content:"";position:absolute;left:3px;right:3px;height:15px;border-radius:3px;background:#777;bottom:3px}
+.dip .sw.on b::after{top:3px;bottom:auto;background:var(--acc)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:8px;font-size:12px}
+.chain span.n{padding:3px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel2)}
+.chain span.a{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);font-size:13px;cursor:pointer;user-select:none}
+.chip.on{border-color:var(--acc);background:#5c4a22}
+.chip.err{border-style:dashed;border-color:var(--bad)}
+.chip .dot{width:10px;height:10px;border-radius:50%;background:#333;border:1px solid #555}
+.prog{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.pcol{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.pcol h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.prow{margin:6px 0}
+.prow .t{display:flex;justify-content:space-between;font-size:13px}
+.prow .t b{font-weight:600;min-width:34px;text-align:right}
+.prow input[type=range]{width:100%;padding:0;accent-color:var(--acc)}
+.prow.r input{accent-color:#ff4b4b}.prow.g input{accent-color:#3fd16b}.prow.b input{accent-color:#4c8dff}.prow.w input{accent-color:#e9e9e9}
+.prow .h{font-size:11px;color:var(--muted)}
+.sw8{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.sw8 button{width:26px;height:22px;padding:0;border-radius:4px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.row label{display:flex;flex-direction:column;font-size:12px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted)}
+.msg{font-size:13px;margin-top:6px;min-height:18px}
+.placeholder{border:1px dashed var(--line);border-radius:10px;padding:18px;color:var(--muted)}
+dl.gl{display:grid;grid-template-columns:minmax(160px,230px) 1fr;gap:6px 16px;margin:0}
+dl.gl dt{font-weight:600}
+dl.gl dd{margin:0;color:#cdd1da}
+@media(max-width:640px){dl.gl{grid-template-columns:1fr}dl.gl dd{margin-bottom:8px}}
+footer{background:var(--panel);border-top:1px solid var(--line);padding:18px 0 28px;margin-top:20px;font-size:14px}
+footer h2{margin-top:0}
+details.about summary{cursor:pointer;font-size:17px;font-weight:600;padding:4px 0;list-style:none;display:flex;align-items:center;gap:8px}
+details.about summary::-webkit-details-marker{display:none}
+details.about summary::before{content:"▸";color:var(--acc);transition:transform .15s}
+details.about[open] summary::before{transform:rotate(90deg)}
+details.about[open] summary{margin-bottom:6px}
+footer ul{margin:6px 0;padding-left:20px}
+.disc{border:1px solid #8a6b28;background:#463a24;border-radius:8px;padding:10px 14px;margin-top:12px}
+.ver{display:inline-block;background:#5c4a22;color:var(--acc);border-radius:10px;padding:1px 9px;font-size:12px;margin-left:8px;vertical-align:2px}
+#warnOv{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;background:rgba(5,5,8,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+#warnOv .box{max-width:640px;width:100%;background:var(--panel);border:2px solid var(--bad);border-radius:14px;padding:26px 28px;text-align:center}
+#warnOv .big{font-size:56px;line-height:1.1;font-weight:800;letter-spacing:.08em;color:var(--bad);margin:0 0 14px}
+#warnOv p{font-size:17px;line-height:1.6;margin:0 0 12px;text-align:left}
+#warnOv .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+#warnOv .btns button{padding:10px 18px;font-size:16px}
+body.locked{overflow:hidden}
+#timeline{position:relative}
+#tlWave{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0}
+#tlBlocks{position:relative;z-index:1;display:flex;width:100%;height:100%}
+.tl.hasmusic{height:76px}
+.tl.hasmusic .blk{background:transparent!important;box-shadow:inset 0 7px 0 var(--bc);border-right:1px solid rgba(255,255,255,.35);color:#e8e9ee;padding-top:8px}
+.tl .ph{z-index:3}
+.drop{margin-top:10px;border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--text);transition:background .15s,border-color .15s}
+.drop.over{border-color:var(--acc);background:#4a3f25}
+.drop.off{opacity:.45}
+.fsbar{display:none;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 14px;background:#121318;border-top:1px solid #2a2d36}
+.fsbar .big{font-size:17px;padding:9px 18px}
+.fsbar .fstime{display:flex;flex-direction:column;min-width:190px}
+.fsbar #fsTc{font-family:ui-monospace,Consolas,monospace;font-size:28px;font-weight:700;color:var(--acc);letter-spacing:.04em}
+.fsbar #fsPart{font-size:13px;color:#aab0bf}
+.fsbar .fshint{font-size:12px;color:#8e93a3;margin-left:auto}
+.fsbar .gobtn{display:none}
+.stagebox.fs{background:#000;margin:0;display:flex;flex-direction:column;width:100vw;height:100vh;max-width:none}
+.stagebox.fs.pseudo{position:fixed;top:0;left:0;right:0;bottom:0;z-index:950}
+.stagebox.fs #stageView{flex:1;min-height:0;position:relative}
+.stagebox.fs #s3wrap{height:100%}
+.stagebox.fs #s3{aspect-ratio:auto;width:100%;height:100%!important;border-radius:0;border:0}
+.stagebox.fs #s3lab{left:0;top:0;width:100%;height:100%;border-radius:0}
+.stagebox.fs #stage{width:100%;height:100%;border-radius:0;border:0}
+.stagebox.fs .stagebar{display:none}
+.stagebox.fs .fsbar{display:flex}
+.stagebox.fs .pbanner{margin:0;border-radius:0}
+body.fsmode{overflow:hidden}
+label.inl{flex-direction:row!important;gap:8px;align-items:center;font-size:14px!important;color:var(--text)!important}
+.beat{display:inline-block;width:16px;height:16px;border-radius:50%;background:#2f343f;border:1px solid var(--line)}
+.beat.on{background:var(--acc)}
+.tc{font-family:ui-monospace,Consolas,monospace;font-size:34px;font-weight:600;letter-spacing:.04em;color:var(--acc)}
+.tl{position:relative;height:34px;margin-top:8px;background:#2f343f;border-radius:6px;overflow:hidden;display:flex}
+.tl .blk{height:100%;border-right:1px solid #101116;font-size:11px;padding:2px 4px;overflow:hidden;white-space:nowrap;color:#101116;cursor:pointer}
+.tl .ph{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:0;pointer-events:none;z-index:2}
+button.gobtn{background:#2e7d4f;border-color:#3fa267;font-weight:700;font-size:18px;padding:8px 28px;display:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+.filebtn{display:inline-block;cursor:pointer;color:var(--text)!important;font-size:15px!important;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+.pbanner{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:#2f5240;border:1px solid #3fa267;border-radius:8px;padding:6px 12px;margin-bottom:8px;font-size:14px}
+.pbanner.show{display:flex}
+.crit td:first-child{width:28px;text-align:center;font-weight:800;font-size:17px}
+.grade{font-size:22px;font-weight:700}
+.chip .x{color:var(--muted);margin-left:2px}
+#mini{position:fixed;right:16px;bottom:16px;z-index:500;width:min(360px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--muted);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.6);display:none;overflow:hidden}
+#mini.show{display:block}
+#mini.big{width:min(560px,calc(100vw - 32px))}
+#mini .mbar{display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;font-size:12px;color:var(--muted);cursor:move;user-select:none;touch-action:none;border-bottom:1px solid var(--line)}
+#mini .mbar span{flex:1}
+#mini .mbar button{padding:1px 8px;font-size:12px}
+#mini svg,#mini canvas{display:block;width:100%;background:#07070a;cursor:pointer}
+#s3wrap{position:relative;display:none}
+#s3{width:100%;aspect-ratio:1000/430;display:block;border-radius:10px;background:#050507;border:1px solid var(--line);cursor:grab;touch-action:pan-y}
+#s3.drag{cursor:grabbing}
+#s3lab{position:absolute;left:1px;top:1px;width:calc(100% - 2px);height:calc(100% - 2px);pointer-events:none;border-radius:10px}
+.camhint{position:absolute;right:10px;bottom:8px;font-size:11px;color:#8e93a3;pointer-events:none;background:rgba(0,0,0,.35);padding:2px 8px;border-radius:6px}
+.seg{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+.seg .seglab{color:var(--muted)}
+.seg label{display:flex;gap:4px;align-items:center;color:var(--text)}
+#miniPill{position:fixed;right:16px;bottom:16px;z-index:500;display:none;padding:6px 12px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+#miniPill.show{display:block}
+</style>
+</head>
+<body class="locked">
+<div id="warnOv" role="alertdialog" aria-modal="true" aria-labelledby="warnTitle" aria-describedby="warnText">
+ <div class="box" id="warnBox">
+  <div class="big" id="warnTitle">УВАГА</div>
+  <div id="warnText">
+   <p>У цій практичній роботі відтворюються сцени сценічного освітлення з <b>мерехтінням</b> і <b>ритмічними спалахами</b> (імітація стробоскопа, чейзів, ефекту Strobe).</p>
+   <p>Студенти, які мають проблеми зі здоров'ям і яким протипоказано перебувати в середовищі з миготливим світлом (зокрема за світлочутливої епілепсії, мігрені, інших неврологічних станів), повинні <b>відмовитися від виконання цієї роботи</b> і <b>повідомити викладача</b> для отримання альтернативного завдання.</p>
+  </div>
+  <div class="btns">
+   <button class="pri" id="warnOk">Ознайомлений(-а), протипоказань не маю — продовжити</button>
+   <button class="danger" id="warnNo">Відмовляюся від виконання</button>
+  </div>
+ </div>
+</div>
+<header>
+ <div class="wrap hrow">
+  <div>
+   <h1>Програмування світлового шоу за протоколом DMX512 <span class="ver">версія 2.1 · 3D</span></h1>
+   <div class="sub">Практична робота з дисципліни «Системи керування освітленням» · навчальна модель пульта</div>
+  </div>
+  <div class="who">
+   <label>Прізвище<input id="stLast" placeholder="Шевченко" size="14"></label>
+   <label>Ім'я<input id="stFirst" placeholder="Олена" size="12"></label>
+   <label>Група<input id="stGroup" placeholder="ЕЕ-41" size="8"></label>
+   <button class="danger wipe" id="btnWipe" title="Видаляє прізвище, ім'я, групу, патч, сцени, чейзи і шоу">Очистити всі дані</button>
+  </div>
+ </div>
+</header>
+
+<div class="wrap">
+ <div class="stagebox" id="stageBox">
+  <div class="pbanner" id="playBanner"><span id="playBannerTxt"></span><button class="sm" id="playBannerStop">Зупинити і повернутися до своєї програми</button></div>
+  <div id="stageView">
+  <div id="s3wrap"><canvas id="s3" aria-label="3D-візуалізація сцени"></canvas><canvas id="s3lab" aria-hidden="true"></canvas>
+   <div class="camhint">Перетягуйте мишею, щоб обертати сцену · подвійний клік — вигляд із залу</div></div>
+  <svg id="stage" viewBox="0 0 1000 430" role="img" aria-label="Візуалізація сцени">
+   <defs id="sdefs"></defs>
+   <g id="stageAll">
+   <rect x="0" y="0" width="1000" height="330" fill="#0c0c12"/>
+   <polygon points="0,330 1000,330 1000,430 0,430" fill="#15151b"/>
+   <g id="gBack"></g>
+   <g id="gBand"></g>
+   <g id="gBeams"></g>
+   <rect x="20" y="22" width="960" height="10" fill="#3a3a46"/>
+   <g id="gFix"></g>
+   </g>
+  </svg>
+  </div>
+  <div class="stagebar">
+   <span class="seg" role="radiogroup" aria-label="Вигляд сцени"><span class="seglab">Вигляд:</span><label><input type="radio" name="view" value="3d" id="v3d"> 3D</label><label><input type="radio" name="view" value="2d" id="v2d"> 2D</label></span>
+   <span class="seg" id="camBar"><span class="seglab">Камера:</span><button class="sm" data-cam="hall">Із залу</button><button class="sm" data-cam="side">Збоку</button><button class="sm" data-cam="top">Зверху</button><button class="sm" data-cam="near">Близько</button><button class="sm" data-zoom="in" aria-label="Наблизити">＋</button><button class="sm" data-zoom="out" aria-label="Віддалити">−</button>
+    <label><input type="checkbox" id="lab3d" checked> Підписи</label></span>
+   <button class="sm" id="fsBtn" title="Розгорнути сцену на весь екран з кнопками керування шоу">⛶ На весь екран</button>
+   <span class="note" id="viewNote"></span>
+   <label><input type="checkbox" id="haze" checked> Дим (haze) — промені видно в повітрі</label>
+   <label><input type="checkbox" id="softStrobe" checked> Пом'якшені спалахи стробоскопа</label>
+   <span id="universeInfo"></span>
+  </div>
+  <div class="fsbar" id="fsBar" aria-label="Керування шоу">
+   <div class="fstime"><span id="fsTc">00:00:00:00</span><span id="fsPart">—</span></div>
+   <button class="go big" data-fs="play">▶ Старт</button><button class="big" data-fs="pause">❚❚ Пауза</button><button class="big" data-fs="stop">■ Стоп</button>
+   <button class="gobtn big" data-fs="go" id="fsGo">GO</button>
+   <span class="seg"><span class="seglab">Режим:</span><label><input type="radio" name="fsmode" value="auto"> Авто</label><label><input type="radio" name="fsmode" value="go"> Play and Go</label></span>
+   <span class="seg" id="fsCam"><span class="seglab">Камера:</span><button class="sm" data-cam="hall">Із залу</button><button class="sm" data-cam="side">Збоку</button><button class="sm" data-cam="top">Зверху</button><button class="sm" data-cam="near">Близько</button></span>
+   <span class="fshint">Пробіл — GO / пауза · Esc — вийти</span>
+   <button class="big" data-fs="exit">✕ Вийти</button>
+  </div>
+ </div>
+
+ <nav class="tabs" id="tabs">
+  <button data-t="task" class="on">Завдання</button>
+  <button data-t="help">Довідка</button>
+  <button data-t="patch">1. Патч</button>
+  <button data-t="scenes">2. Сцени</button>
+  <button data-t="chases">3. Чейзи</button>
+  <button data-t="show">4. Шоу</button>
+  <button data-t="submit">5. Здача</button>
+ </nav>
+
+ <!-- ЗАВДАННЯ -->
+ <section class="tab on" id="t-task">
+  <h2>Мета роботи</h2>
+  <p>Ознайомитися з типовою програмою (пультом) керування сценічним освітленням за протоколом DMX512: виконати адресацію і патчування приладів, запрограмувати сцени та чейзи і зберегти їх як програму шоу тривалістю щонайменше 50 секунд — світлове оформлення однієї пісні рок-концерту. За бажанням шоу можна програмувати під власну пісню.</p>
+
+  <h2>Обладнання на сцені</h2>
+  <div class="tblwrap"><table>
+   <tr><th>Позначення</th><th>Прилад</th><th>К-сть</th><th>Каналів</th><th>Канали (по порядку)</th></tr>
+   <tr><td>S1–S4</td><td>Рухома голова Spot LED (moving head)</td><td>4</td><td>11</td><td>Pan, Tilt, Dimmer, Red, Green, Blue, White, Zoom/Focus, Strobe, Gobo, Speed</td></tr>
+   <tr><td>W1–W4</td><td>LED Wash PAR RGBW (заливний)</td><td>4</td><td>7</td><td>Dimmer, Red, Green, Blue, White, Strobe, Zoom</td></tr>
+   <tr><td>ST1–ST2</td><td>Стробоскоп LED</td><td>2</td><td>2</td><td>Intensity (Dimmer), Rate (частота)</td></tr>
+   <tr><td>F1–F2</td><td>Прожектор Fresnel 1 кВт (галоген) через диммерний блок</td><td>2</td><td>1</td><td>Dimmer (канал диммерного блока)</td></tr>
+  </table></div>
+  <p class="note">Разом 78 каналів — уміщується в один DMX-всесвіт (512 каналів).</p>
+
+  <h2>Порядок виконання</h2>
+  <ol>
+   <li>Вкажіть у верхній частині сторінки своє прізвище, ім'я та групу.</li>
+   <li>Ознайомтеся з вкладкою «Довідка»: протокол DMX512, адресація, терміни.</li>
+   <li><b>Патч.</b> Призначте кожному приладу стартову DMX-адресу так, щоб канали не перекривалися і не виходили за межі 512. Термінатор у кінці лінії встановлено за замовчуванням: зніміть його галочку, щоб побачити, як поводяться прилади в кінці незавершеної лінії, а потім поверніть. Перевірте кожен прилад кнопкою «Тест».</li>
+   <li><b>Сцени.</b> За допомогою програматора виставте яскравість, колір, положення (Pan/Tilt), фокус рухомих голів і запишіть щонайменше 6 сцен з назвами та часом переходу (fade up / fade down).</li>
+   <li><b>Чейзи.</b> Створіть щонайменше 2 чейзи (наприклад, «хвиля» по рухомих головах і пульсація кольору на Wash), задайте кількість кроків, час кроку, напрямок і тип переходу. За бажанням синхронізуйте з темпом (BPM).</li>
+   <li><b>Шоу.</b> Складіть програму шоу (cue list) тривалістю щонайменше 0:50 за структурою пісні: вступ — куплет — приспів — куплет — приспів — фінал. Перевірте відтворення в режимі «Play and Go» та в автоматичному режимі за таймкодом.</li>
+   <li><i>За бажанням:</i> у вкладці «Шоу» завантажте власну пісню — тоді шоу відтворюватиметься разом із нею, а кроки можна позначати просто під час прослуховування. Музика не обов'язкова і на оцінку не впливає.</li>
+   <li><b>Здача.</b> Згенеруйте код програми і надішліть його викладачу. Код містить лише світлову програму, без музики.</li>
+  </ol>
+
+  <h2>Орієнтовна структура пісні (приклад для шоу ≈1:00)</h2>
+  <div class="tblwrap"><table>
+   <tr><th>Час</th><th>Частина</th><th>Ідея світла</th></tr>
+   <tr><td>0:00–0:08</td><td>Вступ</td><td>Темрява, поступове наростання, один промінь на соліста</td></tr>
+   <tr><td>0:08–0:20</td><td>Куплет 1</td><td>Спокійні кольори, загальне освітлення Fresnel</td></tr>
+   <tr><td>0:20–0:30</td><td>Приспів 1</td><td>Яскраво, рух променів, чейз</td></tr>
+   <tr><td>0:30–0:40</td><td>Куплет 2</td><td>Зміна кольорової теми</td></tr>
+   <tr><td>0:40–0:52</td><td>Приспів 2 / соло</td><td>Максимальна динаміка, стробоскоп</td></tr>
+   <tr><td>0:52–1:00</td><td>Фінал</td><td>Акцент, спалах, затемнення (blackout)</td></tr>
+  </table></div>
+
+  <h2>Критерії оцінювання (5-бальна шкала)</h2>
+  <div class="tblwrap"><table>
+   <tr><th>Критерій</th><th>Бал</th></tr>
+   <tr><td>Патч: усі прилади мають адреси, немає перекриття каналів, канали в межах 1–512, встановлено термінатор</td><td>1</td></tr>
+   <tr><td>Сцени: щонайменше 6 сцен з назвами і часом переходу; використано колір, Pan/Tilt рухомих голів і всі типи приладів</td><td>1</td></tr>
+   <tr><td>Чейзи: щонайменше 2 чейзи з різними параметрами (напрямок, час кроку, тип переходу)</td><td>1</td></tr>
+   <tr><td>Шоу: тривалість щонайменше 0:50, щонайменше 8 кроків, містить і сцени, і чейзи</td><td>1</td></tr>
+   <tr><td>Якість: плавні переходи, доречне використання стробоскопа, шоу завершується затемненням</td><td>1</td></tr>
+  </table></div>
+  <p class="note">За кожен критерій: 1 бал — виконано всі пункти, 0,5 бала — щонайменше половину пунктів, 0 — менше половини. Оцінка — сума балів, округлена до цілого (2,5 → 3; 4,5 → 5), але не менше 2. Перевірка виконується автоматично у вкладці «Здача» (там же є самоперевірка); остаточне рішення приймає викладач.</p>
+
+  <h2>Контрольні питання</h2>
+  <ol>
+   <li>Що таке «патчування» і яким чином встановлюється DMX-адреса приладу?</li>
+   <li>Опишіть топологію підключення приладів по протоколу DMX512 і поясніть призначення термінатора.</li>
+   <li>Навіщо застосовуються диммерні блоки і в яких випадках вони не потрібні?</li>
+   <li>Опишіть процес програмування сцени і які параметри переходу між сценами можна задавати.</li>
+   <li>Що таке чейз і які параметри його визначають?</li>
+   <li>Як реалізується синхронізація освітлення з аудіотреком і що таке MIDI Timecode?</li>
+   <li>Чим відрізняється метод «play and go» від повністю автоматизованого відтворення шоу?</li>
+  </ol>
+ </section>
+
+ <!-- ДОВІДКА -->
+ <section class="tab" id="t-help">
+  <h2>Протокол DMX512</h2>
+  <div class="grid2">
+   <div class="card">
+    <h3 style="margin-top:0">Основні характеристики</h3>
+    <ul>
+     <li><b>Всесвіт (universe)</b> — одна DMX-лінія, що передає <b>512 каналів</b>. Для більших систем пульт працює з кількома всесвітами.</li>
+     <li><b>Значення каналу</b> — від 0 до 255 (8 біт). Для Dimmer 0 = вимкнено, 255 = повна яскравість.</li>
+     <li><b>DMX-кадр</b> — пульт безперервно передає значення всіх каналів по черзі; кожен прилад зчитує лише «свої» канали, починаючи зі стартової адреси.</li>
+     <li><b>Фізичний рівень</b> — диференційна лінія RS-485 (Data+ і Data–), швидкість 250 кбіт/с, оновлення до ~44 разів на секунду.</li>
+     <li><b>Роз'єми</b> — XLR 5-pin (за стандартом), на практиці часто XLR 3-pin.</li>
+     <li><b>Обмеження лінії</b> — орієнтовно до 32 приладів на сегмент і до ~300 м кабелю; далі потрібен DMX-сплітер.</li>
+    </ul>
+    <p class="note">Три останні пункти — довідкові відомості поза конспектами лекцій.</p>
+   </div>
+   <div class="card">
+    <h3 style="margin-top:0">Підключення (daisy-chain)</h3>
+    <ul>
+     <li>Сигнал іде від пульта до першого приладу, від нього — до другого і далі послідовно.</li>
+     <li>Кожен прилад має роз'єм <b>DMX-IN</b> і <b>DMX-OUT</b> (або DMX-THRU — прохідний).</li>
+     <li>Наприкінці ланцюжка встановлюють <b>термінатор</b> — резистор <b>120 Ом</b> між лініями Data+ і Data– — для усунення відбиттів сигналу.</li>
+     <li>Для розгалуження лінії застосовують <b>DMX-сплітери</b>: вони посилюють сигнал і роздають його на кілька незалежних ліній.</li>
+     <li>Галогенні прожектори підключають через <b>диммерний блок</b> (dimmer rack): кожен канал блока (зазвичай 2,3 або 3,7 кВт) приймає свій DMX-канал і регулює напругу на прожекторі.</li>
+     <li>LED-прилади мають вбудований DMX-приймач і підключаються безпосередньо до DMX-лінії та до мережі живлення.</li>
+    </ul>
+   </div>
+  </div>
+
+  <div class="card">
+   <h3 style="margin-top:0">Адресація і патч: приклад розрахунку</h3>
+   <p>Прилад займає канали від стартової адреси <b>A</b> до <b>A + N − 1</b>, де N — кількість каналів приладу.</p>
+   <p>Приклад з лекції: диммер на 6 каналів з адресою 1 займає канали 1–6; рухомий прожектор на 16 каналів з адресою 7 займає канали 7–22. Наступний вільний канал — 23.</p>
+   <p>Адресу встановлюють апаратно (DIP-перемикачами, у двійковому коді: перемикач 1 = 1, 2 = 2, 3 = 4 … 9 = 256) або програмно (через меню приладу). Приклад: адреса 23 = 16 + 4 + 2 + 1 → увімкнені перемикачі 5, 3, 2 і 1.</p>
+   <p class="note">Однакова адреса в кількох однакових приладів — не помилка, а прийом: такі прилади працюватимуть синхронно. Помилкою є часткове перекриття каналів різних приладів.</p>
+  </div>
+
+  <div class="card">
+   <h3 style="margin-top:0">Процес налаштування перед шоу</h3>
+   <ol>
+    <li>Розміщення приладів на фермах і сцені відповідно до світлової партитури.</li>
+    <li>Прокладання DMX-лінії (daisy-chain), встановлення термінатора, підключення живлення.</li>
+    <li>Встановлення стартових адрес на приладах (DIP-перемикачі або меню) і вибір режиму (кількості каналів).</li>
+    <li>Патчування у пульті: кожному приладу — тип і адреса.</li>
+    <li>Перевірка: увімкнення кожного приладу по черзі (тест каналів).</li>
+    <li>Наведення (фокусування) рухомих голів на точки сцени, запис положень.</li>
+    <li>Програмування сцен, чейзів і програми шоу; репетиція.</li>
+   </ol>
+  </div>
+
+  <div class="card">
+   <h3 style="margin-top:0">Канали приладів у цій роботі</h3>
+   <dl class="gl">
+    <dt>Dimmer / Intensity</dt><dd>Загальна яскравість приладу (0–255).</dd>
+    <dt>Red, Green, Blue, White</dt><dd>Яскравість кожного кольору світлодіодів RGBW. Колір утворюється змішуванням; за нульових значень усіх кольорів LED-прилад не світить навіть при Dimmer = 255.</dd>
+    <dt>Pan</dt><dd>Поворот рухомої голови в горизонтальній площині (128 — по центру).</dd>
+    <dt>Tilt</dt><dd>Нахил рухомої голови у вертикальній площині. У моделі: малі значення — промінь на задник, великі — на підлогу сцени.</dd>
+    <dt>Zoom / Focus</dt><dd>Кут розкриття і різкість пучка: малі значення — вузький різкий промінь, великі — широкий і м'який.</dd>
+    <dt>Strobe</dt><dd>0–10 — світло без мерехтіння; 11–255 — мерехтіння зі зростаючою частотою.</dd>
+    <dt>Gobo</dt><dd>Шаблон у пучку: 0–63 відкрито; 64–127 точки; 128–191 кільце; 192–255 смуги.</dd>
+    <dt>Speed</dt><dd>Швидкість руху Pan/Tilt: 0 — найшвидше, 255 — найповільніше.</dd>
+    <dt>Rate</dt><dd>Частота спалахів стробоскопа: 0 — без спалахів, 255 — максимальна.</dd>
+   </dl>
+  </div>
+
+  <div class="card">
+   <h3 style="margin-top:0">Словник термінів</h3>
+   <dl class="gl">
+    <dt>Пульт освітлення (lighting console)</dt><dd>Центральний пристрій керування системою сценічного освітлення; формує DMX-сигнал, зберігає сцени, чейзи і шоу.</dd>
+    <dt>DMX-канал</dt><dd>Одна «комірка» DMX-кадру зі значенням 0–255, що керує одним параметром приладу.</dd>
+    <dt>Всесвіт (universe)</dt><dd>Набір із 512 каналів однієї DMX-лінії.</dd>
+    <dt>Стартова адреса</dt><dd>Номер каналу, з якого прилад починає зчитувати свої дані.</dd>
+    <dt>Патчування (patching)</dt><dd>Призначення DMX-каналів конкретним приладам або їх параметрам.</dd>
+    <dt>Режим приладу</dt><dd>Кількість і порядок каналів, які використовує прилад (канальна карта).</dd>
+    <dt>Daisy-chain</dt><dd>Послідовне підключення приладів «від одного до наступного».</dd>
+    <dt>Термінатор</dt><dd>Резистор 120 Ом між Data+ і Data– у кінці лінії, усуває відбиття сигналу.</dd>
+    <dt>DMX-сплітер</dt><dd>Пристрій, що посилює сигнал і розгалужує його на кілька незалежних ліній.</dd>
+    <dt>Диммерний блок (dimmer rack)</dt><dd>Набір тиристорних або MOSFET-регуляторів потужності для галогенних прожекторів; кожен канал керується своїм DMX-каналом.</dd>
+    <dt>Spot / Beam / Wash</dt><dd>Spot і beam — рухомі прожектори з вузьким формованим пучком; wash (flood) — прилади рівномірного заливного освітлення.</dd>
+    <dt>Fresnel</dt><dd>Прожектор з лінзою Френеля, м'який спрямований пучок.</dd>
+    <dt>RGBW</dt><dd>Світлодіоди червоного, зеленого, синього і білого кольору — дозволяють отримати практично будь-який колір без світлофільтрів.</dd>
+    <dt>Програматор</dt><dd>Частина пульта, в якій оператор вручну виставляє значення параметрів перед записом сцени.</dd>
+    <dt>Сцена (scene, cue)</dt><dd>Зафіксований стан усіх або більшості приладів (яскравість, колір, напрямок).</dd>
+    <dt>Fade up / fade down</dt><dd>Час наростання і час спаду яскравості під час переходу між сценами.</dd>
+    <dt>Чейз (chase)</dt><dd>Автоматична послідовна зміна сцен або активація окремих каналів (ефект пульсації, бігу вогнів).</dd>
+    <dt>Крок (step), час кроку</dt><dd>Один стан чейзу і тривалість його відтворення.</dd>
+    <dt>Напрямок чейзу</dt><dd>Прямий, зворотний або маятниковий (туди-назад).</dd>
+    <dt>BPM, Tap tempo</dt><dd>Темп музики в ударах за хвилину; Tap — визначення темпу постукуванням у ритм.</dd>
+    <dt>Генератор ефектів (effects engine)</dt><dd>Вбудована функція пульта, що автоматично змінює параметри (Pan, Tilt, колір, яскравість) за синусоїдою або іншим законом.</dd>
+    <dt>Шоу (show), cue list</dt><dd>Повна послідовність усіх сцен і чейзів у часі відповідно до сценарію.</dd>
+    <dt>GO, «play and go»</dt><dd>Сценарій програмується заздалегідь, а оператор ініціює кожен перехід натисканням кнопки GO.</dd>
+    <dt>MIDI Timecode (MTC)</dt><dd>Протокол синхронізації часу між пристроями; пульт відтворює сценарій відповідно до позиції в треку (формат год:хв:с:кадр).</dd>
+    <dt>Blackout</dt><dd>Повне затемнення сцени.</dd>
+    <dt>Хвильова форма (waveform)</dt><dd>Графік гучності звукового сигналу в часі; на ньому видно вступ, удари, приспіви і паузи — це допомагає ставити кроки шоу точно в музику.</dd>
+    <dt>Сітка доль</dt><dd>Рівномірні позначки ударів (доль) пісні за її темпом; кроки шоу, прив'язані до сітки, звучать «в такт».</dd>
+    <dt>Haze (дим)</dt><dd>Легкий сценічний туман, завдяки якому промені стають видимими в повітрі.</dd>
+   </dl>
+  </div>
+ </section>
+
+ <!-- ПАТЧ -->
+ <section class="tab" id="t-patch">
+  <h2>1. Патч: адресація приладів</h2>
+  <p class="note">Введіть стартову адресу кожного приладу. Поле «Займає канали» розраховується автоматично. Натисніть на рядок, щоб побачити положення DIP-перемикачів для цієї адреси.</p>
+  <div class="tblwrap"><table id="patchTbl"></table></div>
+  <div class="grid2">
+   <div class="card">
+    <h3 style="margin-top:0">Карта DMX-всесвіту (512 каналів)</h3>
+    <div id="umap"></div>
+    <div class="legend">
+     <span><i style="background:#c98b2a"></i>Spot</span><span><i style="background:#3d8fd6"></i>Wash</span>
+     <span><i style="background:#cfcfcf"></i>Стробоскоп</span><span><i style="background:#9b6be0"></i>Fresnel</span>
+     <span><i style="background:var(--bad)"></i>Перекриття</span><span><i style="background:#4a5060"></i>Вільно</span>
+    </div>
+   </div>
+   <div class="card">
+    <h3 style="margin-top:0">DIP-перемикачі: <span id="dipName">—</span></h3>
+    <div class="dip" id="dip"></div>
+    <div class="note" id="dipTxt">Оберіть прилад у таблиці.</div>
+    <h3>DMX-лінія (daisy-chain)</h3>
+    <div class="chain" id="chain"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="term"> Встановити термінатор 120 Ом у кінці лінії</label>
+    <div class="msg" id="termMsg"></div>
+   </div>
+  </div>
+ </section>
+
+ <!-- СЦЕНИ -->
+ <section class="tab" id="t-scenes">
+  <h2>2. Програмування сцен</h2>
+  <div class="card">
+   <div class="row" style="justify-content:space-between">
+    <div><b>Вибір приладів</b> <span class="note">(клацніть, щоб вибрати; можна кілька)</span></div>
+    <div class="row">
+     <button class="sm" data-grp="spot">Усі Spot</button><button class="sm" data-grp="wash">Усі Wash</button>
+     <button class="sm" data-grp="strobe">Стробоскопи</button><button class="sm" data-grp="fresnel">Fresnel</button>
+     <button class="sm" data-grp="all">Усі</button><button class="sm" data-grp="none">Нічого</button>
+    </div>
+   </div>
+   <div class="chips" id="chips" style="margin-top:10px"></div>
+   <div class="msg warn" id="selWarn"></div>
+   <div class="prog" id="prog"></div>
+   <div class="row" style="margin-top:12px">
+    <button id="btnHome">Скинути програматор (Home)</button>
+    <button id="btnBlack" class="danger">Blackout</button>
+   </div>
+  </div>
+
+  <div class="card">
+   <b>Запис сцени</b> <span class="note">— зберігається стан усіх приладів</span>
+   <div class="row" style="margin-top:8px">
+    <label>№<input id="scNum" type="number" min="1" max="999" style="width:70px"></label>
+    <label>Назва<input id="scName" placeholder="Приспів — червоний" style="width:220px"></label>
+    <label>Fade up, с<input id="scUp" type="number" min="0" max="30" step="0.1" value="1" style="width:80px"></label>
+    <label>Fade down, с<input id="scDown" type="number" min="0" max="30" step="0.1" value="1" style="width:80px"></label>
+    <button class="pri" id="btnRec">Записати сцену</button>
+   </div>
+   <div class="msg" id="recMsg"></div>
+  </div>
+
+  <div class="card">
+   <b>Записані сцени</b>
+   <div class="tblwrap"><table id="scTbl" style="margin-top:6px"></table></div>
+  </div>
+ </section>
+
+ <section class="tab" id="t-chases">
+  <h2>3. Чейзи</h2>
+  <div class="card">
+   <b>Темп музики (BPM)</b>
+   <div class="row" style="margin-top:8px;align-items:center">
+    <label class="inl"><input type="checkbox" id="bpmOn"> Синхронізувати чейзи з темпом</label>
+    <label>BPM<input id="bpmVal" type="number" min="40" max="240" step="0.1" value="120" style="width:80px"></label>
+    <button id="btnTap" title="Постукайте в ритм музики 4–8 разів">Tap</button>
+    <span class="beat" id="beatDot" title="Індикатор долі"></span>
+    <label class="inl"><input type="checkbox" id="metroOn"> Звук метронома</label>
+   </div>
+   <div class="note" id="bpmNote" style="margin-top:6px"></div>
+  </div>
+
+  <div class="card">
+   <b>Редактор чейзу</b>
+   <div class="row" style="margin-top:8px">
+    <label>№<input id="chNum" type="number" min="1" max="99" style="width:70px"></label>
+    <label>Назва<input id="chName" placeholder="Хвиля по Spot" style="width:200px"></label>
+    <label>Тип<select id="chType"><option value="scenes">Послідовність сцен</option><option value="run">Біг по приладах</option></select></label>
+    <label>Напрямок<select id="chDir"><option value="fwd">Прямий</option><option value="rev">Зворотний</option><option value="pend">Маятниковий</option></select></label>
+    <label>Перехід<select id="chX"><option value="snap">Різкий</option><option value="fade">Плавний</option></select></label>
+    <label id="lbTime">Час кроку, с<input id="chTime" type="number" min="0.05" max="10" step="0.05" value="0.5" style="width:80px"></label>
+    <label id="lbBeats">Ударів на крок<input id="chBeats" type="number" min="0.25" max="16" step="0.25" value="1" style="width:80px"></label>
+   </div>
+   <div id="chScenesBox" style="margin-top:10px">
+    <div class="note">Кроки — записані сцени, які відтворюються по черзі.</div>
+    <div class="row" style="margin-top:6px"><select id="chAddSel" style="min-width:240px"></select><button id="chAdd">Додати крок</button><button id="chClr" class="sm">Очистити кроки</button></div>
+    <div class="chips" id="chSteps" style="margin-top:8px"></div>
+   </div>
+   <div id="chRunBox" style="margin-top:10px;display:none">
+    <div class="note">Базова сцена задає колір і положення. На кожному кроці світить лише один прилад зі списку, решта приладів списку гасне (ефект «бігу вогнів» або «хвилі»).</div>
+    <div class="row" style="margin-top:6px"><label>Базова сцена<select id="chBase" style="min-width:240px"></select></label></div>
+    <div class="note" style="margin-top:8px">Клацайте прилади в потрібному порядку:</div>
+    <div class="chips" id="chRunPick" style="margin-top:6px"></div>
+    <div class="row" style="margin-top:6px;align-items:center"><span class="note">Порядок:</span><div class="chips" id="chRunOrder"></div><button id="chRunClr" class="sm">Очистити</button></div>
+   </div>
+   <div class="row" style="margin-top:12px">
+    <button class="go" id="chTest">▶ Тест</button><button id="chStop">■ Стоп</button>
+    <button class="pri" id="chRec">Записати чейз</button><button id="chNew">Новий чейз</button>
+   </div>
+   <div class="msg" id="chMsg"></div>
+  </div>
+
+  <div class="card">
+   <b>Записані чейзи</b>
+   <div class="tblwrap"><table id="chTbl" style="margin-top:6px"></table></div>
+  </div>
+ </section>
+
+ <section class="tab" id="t-show">
+  <h2>4. Програма шоу</h2>
+  <div class="card">
+   <div class="row" style="justify-content:space-between;align-items:center">
+    <div><div class="tc" id="tc">00:00:00:00</div><div class="note">таймкод год:хв:с:кадр (25 кадрів/с) · <span id="tcPart">—</span></div></div>
+    <div class="row" style="align-items:center">
+     <label class="inl"><input type="radio" name="pmode" value="auto" checked> Автоматично за таймкодом</label>
+     <label class="inl"><input type="radio" name="pmode" value="go"> Play and Go</label>
+    </div>
+   </div>
+   <input type="range" id="scrub" min="0" max="60" step="0.1" value="0" style="width:100%;margin-top:10px;accent-color:var(--acc)" aria-label="Позиція в шоу">
+   <div class="tl" id="timeline"><canvas id="tlWave"></canvas><div id="tlBlocks"></div><div class="ph" id="playhead"></div></div>
+   <div class="note" id="tlNote" style="margin-top:4px">Клацніть на таймлайні, щоб перейти до цього моменту.</div>
+   <div class="row" style="margin-top:12px;align-items:center">
+    <button class="go" id="shPlay">▶ Відтворити</button><button id="shPause">❚❚ Пауза</button><button id="shStop">■ Стоп</button>
+    <button class="gobtn" id="shGo" title="Пробіл">GO</button>
+    <span style="flex:1"></span>
+    <button id="shFs">⛶ На весь екран</button>
+    <button id="shDemo">Приклад шоу</button>
+   </div>
+   <div class="msg" id="goMsg"></div>
+  </div>
+
+  <div class="card" id="musicCard">
+   <b>Музика — за бажанням</b>
+   <div class="note">Можна завантажити власну пісню й програмувати шоу під неї: тоді пісня стає таймкодом шоу. Для виконання і перевірки роботи музика не потрібна — викладач оцінює лише світлову програму.</div>
+   <div id="muIntro" style="margin-top:8px">
+    <div class="disc"><b>Підтримувані формати:</b> MP3, WAV, OGG, M4A (AAC), FLAC, WEBM / OPUS (залежить від браузера; найнадійніше — MP3 і WAV).<br>
+    <b>Авторські права.</b> Файл відкривається лише у вашому браузері: він нікуди не завантажується і не потрапляє в код роботи. Використовуйте пісню тільки для навчання в межах цієї роботи. <b>Публікувати шоу з накладеною чужою музикою, захищеною авторським правом</b> (відео, запис екрана, допис у соцмережах тощо), <b>заборонено</b> без дозволу правовласника.</div>
+    <label class="inl" style="margin-top:8px"><input type="checkbox" id="muAgree"> Я ознайомився(-лася) з умовами і використовуватиму музику лише для навчання</label>
+   </div>
+   <div class="drop off" id="muDrop"><span id="muDropTxt">Перетягніть сюди аудіофайл або</span> <label class="filebtn">Вибрати файл…<input type="file" id="muFile" accept="audio/*,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.webm,.opus" hidden></label></div>
+   <div id="muPrev" class="note" style="margin-top:6px"></div>
+   <div id="muCtl" style="display:none;margin-top:10px">
+    <div><b id="muName"></b> <span class="note" id="muDur"></span></div>
+    <div class="row" style="margin-top:8px;align-items:flex-end">
+     <label>Початок фрагмента в пісні<input id="muStart" value="0:00" style="width:90px"></label>
+     <button id="muFit" title="Встановити «Кінець шоу» так, щоб шоу тривало до кінця пісні">Кінець шоу = кінець пісні</button>
+     <button id="muTempo">Визначити темп пісні</button>
+     <label>Гучність<input type="range" id="muVol" min="0" max="1" step="0.05" value="0.8" style="width:120px;padding:0"></label>
+     <label class="inl"><input type="checkbox" id="muUse" checked> Відтворювати разом із шоу</label>
+     <label class="inl"><input type="checkbox" id="metroOn2"> Клацання метронома</label>
+     <button class="danger" id="muRemove">Прибрати пісню</button>
+    </div>
+   </div>
+   <div class="msg" id="muMsg"></div>
+  </div>
+
+  <div class="card" id="cueCard">
+   <div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div><b>Cue list — послідовність сцен і чейзів</b><div class="note">Кожен крок починається у вказаний час і триває до початку наступного. Час: «1:05.5» або «65.5».</div></div>
+    <div class="row" style="align-items:flex-end"><label>Кінець шоу<input id="shEnd" value="1:00" style="width:80px"></label><button id="cueAdd" class="pri">Додати крок</button>
+     <button id="cueMark" title="Клавіша M. Додає крок у поточний момент відтворення">● Позначити крок зараз</button>
+     <label class="inl"><input type="checkbox" id="snapBeat"> Прив'язувати до долі</label></div>
+   </div>
+   <div class="tblwrap"><table id="cueTbl" style="margin-top:8px"></table></div>
+   <div class="msg" id="cueMsg"></div>
+  </div>
+ </section>
+
+ <section class="tab" id="t-submit">
+  <h2>5. Здача роботи</h2>
+  <div class="card">
+   <b>Самоперевірка</b> <span class="note">— та сама перевірка, що й у викладача; виправте недоліки перед здачею</span>
+   <div id="selfCheck" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+   <b>Код програми для викладача</b>
+   <div class="note">Код містить прізвище, ім'я, групу, час створення і всю програму: патч, сцени, чейзи, шоу.</div>
+   <div class="row" style="margin-top:8px"><button class="pri" id="genCode">Згенерувати код</button><button id="copyCode">Копіювати</button><button id="saveCode">Зберегти у файл .txt</button></div>
+   <textarea id="codeOut" readonly rows="5" style="width:100%;margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px"></textarea>
+   <div class="msg" id="codeMsg"></div>
+  </div>
+
+  <h2>Перевірка роботи (для викладача)</h2>
+  <div class="card">
+   <div class="note">Вставте код студента або відкрийте файл .txt. Ваша власна робота на цій сторінці при цьому не змінюється.</div>
+   <textarea id="codeIn" rows="5" placeholder="DMX1:…" style="width:100%;margin-top:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px"></textarea>
+   <div class="row" style="margin-top:8px">
+    <button class="pri" id="chkCode">Перевірити код</button>
+    <label class="filebtn">Відкрити файл .txt<input type="file" id="codeFile" accept=".txt,text/plain" hidden></label>
+    <button id="playStudent" disabled>▶ Відтворити шоу студента</button>
+    <button id="loadEditor" disabled title="Замінить вашу поточну роботу на цій сторінці">Завантажити в редактор</button>
+   </div>
+   <div class="msg" id="chkMsg"></div>
+   <div id="chkOut"></div>
+  </div>
+  <div class="card">
+   <b>Почати нову роботу</b>
+   <div class="note">Видаляє патч, сцени, чейзи і шоу з цієї сторінки (прізвище й група залишаються).</div>
+   <button class="danger" id="resetAll" style="margin-top:8px">Очистити все</button>
+  </div>
+ </section>
+</div>
+
+<div id="mini" aria-label="Зменшене зображення сцени">
+ <div class="mbar" id="miniBar" title="Перетягніть, щоб перемістити"><span>Сцена (перетягніть мишею)</span>
+  <button id="miniSize" title="Змінити розмір">Більше</button><button id="miniUp" title="Прокрутити до повної сцени">Вгору</button><button id="miniHide" title="Сховати">×</button></div>
+ <svg viewBox="0 0 1000 430" id="miniSvg" title="Натисніть, щоб перейти до повної сцени"><use href="#stageAll"/></svg><canvas id="miniCv" width="560" height="241" title="Натисніть, щоб перейти до повної сцени"></canvas>
+</div>
+<button id="miniPill">Показати сцену</button>
+
+<footer>
+ <div class="wrap">
+ <details class="about">
+  <summary>Про сторінку: як її створено</summary>
+  <ul>
+   <li>Сторінку розроблено з використанням штучного інтелекту — моделі <b>Claude Opus 5.5</b> (компанія Anthropic), жовтень–листопад 2026 р.</li>
+   <li>Створено за завданням і інструкціями викладача дисципліни «Системи керування освітленням» для студентів 4 курсу (спеціальність «Електроенергетика», комп'ютерний дизайн освітлення). Викладач визначив мету, зміст і вимоги до роботи переглядав проміжні версії та затвердив правила оцінювання.</li>
+   <li><b>Матеріали, надані викладачем:</b> конспекти лекцій 027 «Основи сценічного освітлення та його особливості», 028 «Обладнання та системи управління сценою», 029 «Програмування світлових сцен та шоу»; вимоги до складу обладнання, етапів роботи, візуалізації, способу здачі та оцінювання за 5-бальною шкалою.</li>
+   <li><b>Що виконав ШІ:</b> структуру і тексти завдання та довідки (на основі конспектів, з позначеними доповненнями щодо загальних характеристик DMX512), модель приладів і канальних карт, візуалізацію сцени (2D і 3D; 3D-сцену побудовано на власному мінімальному рушії WebGL, вбудованому у файл, без сторонніх бібліотек), необов'язкову роботу з музикою (локальне відтворення, хвильова форма, визначення темпу), повноекранний режим демонстрації, програмний код сторінки, логіку перевірки.</li>
+  </ul>
+  <div class="disc"><b>Застереження.</b> Це орієнтовна навчальна модель, а не реальний інструмент для керування освітленням чи проведення шоу. Сторінка не формує DMX-сигнал і не підключається до обладнання. Прилади, канальні карти, режими і візуалізація спрощені та умовні; реальні пульти і прилади працюють інакше — керуйтеся документацією виробників і правилами техніки безпеки. Сторінка містить мерехтіння і ритмічні спалахи; під час кожного відкриття показується попередження, і візуалізація запускається лише після підтвердження студентом. Студенти з протипоказаннями до миготливого світла отримують альтернативне завдання у викладача.</div>
+ </details>
+ </div>
+</footer>
+
+<script>
+"use strict";
+const TYPES={
+ spot:{name:'Рухома голова Spot LED',ch:['pan','tilt','dim','r','g','b','w','zoom','str','gobo','spd'],c:'#c98b2a'},
+ wash:{name:'LED Wash PAR RGBW',ch:['dim','r','g','b','w','str','zoom'],c:'#3d8fd6'},
+ strobe:{name:'Стробоскоп LED',ch:['dim','rate'],c:'#cfcfcf'},
+ fresnel:{name:'Fresnel 1 кВт через диммерний блок',ch:['dim'],c:'#9b6be0'}
+};
+const PN={pan:'Pan',tilt:'Tilt',dim:'Dimmer',r:'Red',g:'Green',b:'Blue',w:'White',zoom:'Zoom / Focus',str:'Strobe',gobo:'Gobo',spd:'Speed',rate:'Rate'};
+const HINT={str:'0–10 без мерехтіння · 11–255 частота',gobo:'0–63 відкрито · 64 точки · 128 кільце · 192 смуги',spd:'0 — найшвидше',rate:'0 — без спалахів',tilt:'менше — задник · більше — підлога',zoom:'менше — вузький різкий',pan:'128 — по центру'};
+const HOME={pan:128,tilt:150,zoom:100};
+const FX=[
+ {id:'S1',t:'spot',x:230},{id:'S2',t:'spot',x:410},{id:'S3',t:'spot',x:590},{id:'S4',t:'spot',x:770},
+ {id:'W1',t:'wash',x:130},{id:'W2',t:'wash',x:370},{id:'W3',t:'wash',x:630},{id:'W4',t:'wash',x:870},
+ {id:'ST1',t:'strobe',x:60},{id:'ST2',t:'strobe',x:940},
+ {id:'F1',t:'fresnel',x:330},{id:'F2',t:'fresnel',x:670}
+];
+const FXI={};FX.forEach(f=>FXI[f.id]=f);
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function emptyProg(){const o={student:{last:'',first:'',group:''},addr:{},term:true,scenes:[],chases:[],show:[],showEnd:60,bpm:{on:false,val:120},music:null};FX.forEach(f=>o.addr[f.id]=null);return o}
+let S=emptyProg();
+const KEY='dmx-praktychna-v1';
+try{const o=JSON.parse(localStorage.getItem(KEY)||'null');if(o&&o.addr)S=Object.assign(S,o)}catch(e){}
+/* активна програма для відтворення: власна (S), приклад або робота студента у викладача */
+let PLAY=null;
+function PROG(){return PLAY?PLAY.prog:S}
+try{if(!S.term&&FX.every(f=>S.addr[f.id]==null))S.term=true}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const cur={},disp={};
+function homeVals(f){const o={};TYPES[f.t].ch.forEach(p=>o[p]=HOME[p]!==undefined&&f.t!=='strobe'?HOME[p]:0);return o}
+FX.forEach(f=>{cur[f.id]=homeVals(f);disp[f.id]={pan:128,tilt:150}});
+
+/* ---------- значки стану ✓ ✗ ⚠ ---------- */
+const ICO={ok:'✓',bad:'✗',warn:'⚠'};
+function badge(cls,t){return ICO[cls]?`<span class="${cls}"><b class="ico">${ICO[cls]}</b>${t}</span>`:`<span class="${cls||''}">${t}</span>`}
+/* ---------- учасник ---------- */
+[['stLast','last'],['stFirst','first'],['stGroup','group']].forEach(([id,k])=>{const el=$(id);el.value=S.student[k]||'';
+ const chk=()=>el.classList.toggle('bad',!el.value.trim());chk();
+ el.addEventListener('input',()=>{S.student[k]=el.value;chk();save()})});
+
+/* ---------- вкладки ---------- */
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));
+ const t=b.dataset.t;
+ const yTabs=document.querySelector('.stagebox').getBoundingClientRect().bottom+scrollY;if(scrollY>yTabs)scrollTo({top:yTabs});
+ if(PLAY&&['patch','scenes','chases'].includes(t))setPlay(null);
+ if(t==='scenes')renderChips(),renderProg();
+ if(t==='chases')renderChaseUI();
+ if(t==='show')renderCues();
+ if(t==='submit')renderSelfCheck();});
+
+/* ---------- патч ---------- */
+let PI={occ:[],err:{}};
+function patchOf(prog){
+ const occ=Array.from({length:513},()=>[]),err={},A=prog.addr||{};
+ FX.forEach(f=>{const a=A[f.id],n=TYPES[f.t].ch.length;
+  if(a==null){err[f.id]='адресу не призначено';return}
+  if(a<1||a+n-1>512)err[f.id]='виходить за межі 1–512';
+  for(let i=0;i<n;i++){const c=a+i;if(c>=1&&c<=512)occ[c].push(f.id)}});
+ for(let c=1;c<=512;c++){const l=occ[c];if(l.length>1){
+  const sameType=l.every(id=>FXI[id].t===FXI[l[0]].t)&&l.every(id=>A[id]===A[l[0]]);
+  if(!sameType)l.forEach(id=>{if(!err[id])err[id]='перекриття каналів з '+l.filter(x=>x!==id).join(', ')})}}
+ return {occ,err};
+}
+function computePatch(){PI=patchOf(S)}
+let selPatch=null;
+function buildPatchTable(){
+ let h='<tr><th>Прилад</th><th>Тип</th><th>Каналів</th><th>Стартова адреса</th><th>Займає канали</th><th>Стан</th><th></th></tr>';
+ FX.forEach(f=>{const n=TYPES[f.t].ch.length,a=S.addr[f.id];
+  h+=`<tr data-id="${f.id}"><td><b>${f.id}</b></td><td>${TYPES[f.t].name}</td><td>${n}</td>
+  <td><input type="number" min="1" max="512" step="1" value="${a==null?'':a}" data-addr="${f.id}" style="width:86px"></td>
+  <td data-rng="${f.id}"></td><td data-st="${f.id}"></td>
+  <td><button class="sm" data-test="${f.id}">Тест</button></td></tr>`});
+ $('patchTbl').innerHTML=h}
+function renderPatch(){
+ computePatch();
+ FX.forEach(f=>{const n=TYPES[f.t].ch.length,a=S.addr[f.id],e=PI.err[f.id];
+  document.querySelector(`#patchTbl tr[data-id="${f.id}"]`).classList.toggle('sel',selPatch===f.id);
+  document.querySelector(`input[data-addr="${f.id}"]`).classList.toggle('bad',!!e);
+  document.querySelector(`[data-rng="${f.id}"]`).textContent=a!=null?a+'–'+(a+n-1):'—';
+  document.querySelector(`[data-st="${f.id}"]`).innerHTML=e?badge('bad',e):badge('ok','гаразд')});
+ renderUmap();renderDip();renderChain();updUniverseInfo();
+}
+function updUniverseInfo(){let used=0;for(let c=1;c<=512;c++)if(PI.occ[c]&&PI.occ[c].length)used++;
+ const errs=Object.keys(PI.err).length;
+ $('universeInfo').innerHTML=`Всесвіт 1: зайнято ${used} з 512 каналів · ${errs?badge('bad','проблем патчу: '+errs):badge('ok','патч без помилок')} · термінатор: ${S.term?badge('ok','є'):badge('bad','немає')}`}
+function renderUmap(){let h='';for(let c=1;c<=512;c++){const l=PI.occ[c];let bg='#4a5060',t=`Канал ${c}: вільно`;
+ if(l.length){const f=FXI[l[0]];const conflict=l.length>1&&l.some(id=>PI.err[id]&&PI.err[id].startsWith('перекриття'));
+  bg=conflict?'var(--bad)':TYPES[f.t].c;t=`Канал ${c}: `+l.map(id=>id+' · '+PN[TYPES[FXI[id].t].ch[c-S.addr[id]]]).join(', ')}
+ h+=`<div title="${t}" style="background:${bg}"></div>`}$('umap').innerHTML=h}
+function renderDip(){const f=selPatch;const a=f?S.addr[f]:null;let h='';
+ for(let i=0;i<9;i++){const on=a!=null&&a>0&&((a>>i)&1);h+=`<div class="sw ${on?'on':''}"><b></b>${i+1}</div>`}
+ h+=`<div class="sw"><b style="opacity:.3"></b>10</div>`;$('dip').innerHTML=h;
+ $('dipName').textContent=f||'—';
+ if(!f)$('dipTxt').textContent='Оберіть прилад у таблиці.';
+ else if(a==null)$('dipTxt').textContent='Адресу не призначено.';
+ else{const parts=[];for(let i=8;i>=0;i--)if((a>>i)&1)parts.push(1<<i);$('dipTxt').textContent=`Адреса ${a} = ${parts.join(' + ')||0}. Увімкнені перемикачі: ${[...Array(9).keys()].filter(i=>(a>>i)&1).map(i=>i+1).reverse().join(', ')}. Перемикач 10 — функціональний (у моделі не використовується).`}}
+function renderChain(){let h='<span class="n">Пульт</span>';FX.forEach(f=>{h+=`<span class="a">→</span><span class="n">${f.id}</span>`});
+ h+=`<span class="a">→</span><span class="n" style="border-color:${S.term?'var(--ok)':'var(--bad)'}">${S.term?'✓ Термінатор 120 Ом':'✗ кінець лінії без термінатора'}</span>`;
+ $('chain').innerHTML=h;$('term').checked=S.term;
+ $('termMsg').innerHTML=S.term?badge('ok','Лінію правильно завершено.'):badge('bad','Без термінатора сигнал відбивається від кінця лінії — останні прилади ланцюжка можуть «смикатися» і мерехтіти.')}
+$('patchTbl').addEventListener('change',e=>{const id=e.target.dataset.addr;if(!id)return;const v=e.target.value.trim();
+ S.addr[id]=v===''?null:Math.round(+v);save();selPatch=id;renderPatch()});
+$('patchTbl').addEventListener('click',e=>{const t=e.target.dataset.test;if(t){testFixture(t);return}
+ const tr=e.target.closest('tr[data-id]');if(tr&&e.target.tagName!=='INPUT'){selPatch=tr.dataset.id;renderPatch()}});
+$('patchTbl').addEventListener('focusin',e=>{const id=e.target.dataset.addr;if(id&&selPatch!==id){selPatch=id;document.querySelectorAll('#patchTbl tr').forEach(r=>r.classList.toggle('sel',r.dataset.id===id));renderDip()}});
+$('term').addEventListener('change',e=>{S.term=e.target.checked;save();renderChain();updUniverseInfo()});
+function testFixture(id){const f=FXI[id],old=Object.assign({},cur[id]);
+ TYPES[f.t].ch.forEach(p=>{if(['dim','r','g','b','w'].includes(p))cur[id][p]=255;if(p==='rate')cur[id][p]=60;if(p==='str')cur[id][p]=0});
+ cancelFades(id);setTimeout(()=>{Object.assign(cur[id],old)},1500)}
+
+/* ---------- DMX ---------- */
+const dmx=new Uint8Array(513);
+function writeDmx(){const A=PROG().addr;dmx.fill(0);FX.forEach(f=>{const a=A[f.id];if(a==null)return;
+ TYPES[f.t].ch.forEach((p,i)=>{const c=a+i;if(c>=1&&c<=512)dmx[c]=Math.max(dmx[c],Math.round(clamp(cur[f.id][p],0,255)))})})}
+function readFix(f){const P=PROG(),a=P.addr[f.id],o={};TYPES[f.t].ch.forEach((p,i)=>{const c=a==null?0:a+i;o[p]=c>=1&&c<=512?dmx[c]:0});
+ if(!P.term&&a!=null){const idx=FX.indexOf(f);if(idx>=FX.length-5&&Math.random()<0.12){o.dim=Math.random()*255;if(o.pan!==undefined){o.pan=clamp(o.pan+(Math.random()-.5)*60,0,255)}}}
+ return o}
+
+/* ---------- переходи (fade) ---------- */
+let fades=[];
+function cancelFades(id,p){fades=fades.filter(x=>!(x.id===id&&(p===undefined||x.p===p)))}
+function setTarget(id,p,to,dur){cancelFades(id,p);if(!(dur>0)){cur[id][p]=to;return}
+ fades.push({id,p,from:cur[id][p],to,t0:performance.now(),dur:dur*1000})}
+function stepFades(now){fades=fades.filter(f=>{const k=Math.min(1,(now-f.t0)/f.dur);cur[f.id][f.p]=f.from+(f.to-f.from)*k;return k<1})}
+const INT=['dim','r','g','b','w'],SNAP=['str','gobo','rate','spd'];
+function playScene(sc){FX.forEach(f=>{const v=sc.v[f.id];if(!v)return;TYPES[f.t].ch.forEach((p,i)=>{const to=v[i],from=cur[f.id][p];
+ let d=INT.includes(p)?(to>=from?sc.up:sc.down):SNAP.includes(p)?0:sc.up;setTarget(f.id,p,to,d)})})}
+
+/* ---------- підтвердження без системних вікон (confirm() блокується у вбудованих переглядачах) ---------- */
+function armed(btn,label){if(btn.dataset.arm==='1'){clearTimeout(btn._t);delete btn.dataset.arm;btn.textContent=btn.dataset.orig;btn.classList.remove('armed');return true}
+ btn.dataset.orig=btn.textContent;btn.dataset.arm='1';btn.textContent=label;btn.classList.add('armed');
+ btn._t=setTimeout(()=>{delete btn.dataset.arm;btn.textContent=btn.dataset.orig;btn.classList.remove('armed')},4000);return false}
+function usedIn(kind,n){const u=[];if(kind==='scene'){S.chases.forEach(c=>{if((c.steps||[]).includes(n)||c.base===n)u.push('чейз '+c.n)})}
+ S.show.forEach((c,i)=>{if(c.type===kind&&+c.ref===n)u.push('крок шоу '+(i+1))});return u}
+let recArm=null,chArm=null;
+/* ---------- програматор ---------- */
+let sel=new Set(['S1','S2','S3','S4']);
+function renderChips(){let h='';FX.forEach(f=>{const e=PI.err[f.id];
+ h+=`<span class="chip ${sel.has(f.id)?'on':''} ${e?'err':''}" data-id="${f.id}" title="${e?f.id+': '+e:TYPES[f.t].name}"><span class="dot" data-dot="${f.id}"></span>${f.id}</span>`});
+ $('chips').innerHTML=h;
+ const bad=[...sel].filter(id=>PI.err[id]);
+ $('selWarn').textContent=bad.length?`⚠ Увага: ${bad.join(', ')} — ${bad.map(id=>PI.err[id]).filter((v,i,a)=>a.indexOf(v)===i).join('; ')}. Такий прилад може не реагувати на програматор — поверніться до вкладки «Патч».`:''}
+$('chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const id=c.dataset.id;sel.has(id)?sel.delete(id):sel.add(id);renderChips();renderProg()});
+document.querySelectorAll('[data-grp]').forEach(b=>b.addEventListener('click',()=>{const g=b.dataset.grp;
+ sel=new Set(g==='none'?[]:FX.filter(f=>g==='all'||f.t===g).map(f=>f.id));renderChips();renderProg()}));
+const COLS=[['Інтенсивність',['dim','str','rate']],['Колір',['r','g','b','w']],['Положення',['pan','tilt','spd']],['Промінь',['zoom','gobo']]];
+const PRESETS=[['Червоний',[255,0,0,0]],['Помаранчевий',[255,90,0,0]],['Жовтий',[255,200,0,0]],['Зелений',[0,255,0,0]],['Блакитний',[0,200,255,0]],['Синій',[0,0,255,0]],['Фіолетовий',[150,0,255,0]],['Рожевий',[255,0,140,0]],['Білий',[0,0,0,255]],['Теплий білий',[255,140,40,200]]];
+function selHas(p){return [...sel].filter(id=>TYPES[FXI[id].t].ch.includes(p))}
+function renderProg(){
+ if(!sel.size){$('prog').innerHTML='<div class="note">Оберіть один або кілька приладів.</div>';return}
+ let h='';COLS.forEach(([title,ps])=>{const rows=ps.filter(p=>selHas(p).length);if(!rows.length)return;
+  h+=`<div class="pcol"><h4>${title}</h4>`;
+  if(title==='Колір'){h+='<div class="note" style="font-size:12px">Швидкий вибір кольору:</div><div class="sw8" style="margin:4px 0 10px">'+PRESETS.map((c,i)=>{const [r,g,b,w]=c[1];const rr=Math.min(255,r+w),gg=Math.min(255,g+w*.9),bb=Math.min(255,b+w*.8);return `<button title="${c[0]}" aria-label="${c[0]}" data-pre="${i}" style="background:rgb(${rr},${gg},${bb})"></button>`}).join('')+'</div>'}
+  rows.forEach(p=>{const ids=selHas(p);const v=Math.round(cur[ids[0]][p]);
+   let lab=PN[p];if(p==='dim'&&ids.some(id=>FXI[id].t==='strobe'))lab='Dimmer / Intensity';
+   h+=`<div class="prow ${p}"><div class="t"><span>${lab}</span><b data-val="${p}">${v}</b></div><input type="range" min="0" max="255" step="1" value="${v}" data-p="${p}">${HINT[p]?`<div class="h">${HINT[p]}</div>`:''}</div>`});
+  h+='</div>'});
+ $('prog').innerHTML=h}
+$('prog').addEventListener('input',e=>{const p=e.target.dataset.p;if(!p)return;const v=+e.target.value;
+ selHas(p).forEach(id=>{cancelFades(id,p);cur[id][p]=v});$('prog').querySelector(`[data-val="${p}"]`).textContent=v});
+$('prog').addEventListener('click',e=>{const i=e.target.dataset.pre;if(i===undefined)return;const vals=PRESETS[+i][1];
+ ['r','g','b','w'].forEach((p,k)=>selHas(p).forEach(id=>{cancelFades(id,p);cur[id][p]=vals[k]}));
+ [...sel].forEach(id=>{if(TYPES[FXI[id].t].ch.includes('r')&&cur[id].dim<1){cur[id].dim=255}});syncSliders()});
+function syncSliders(){$('prog').querySelectorAll('input[data-p]').forEach(inp=>{if(inp===document.activeElement)return;const p=inp.dataset.p;const ids=selHas(p);if(!ids.length)return;
+ const v=Math.round(cur[ids[0]][p]);inp.value=v;const b=$('prog').querySelector(`[data-val="${p}"]`);if(b)b.textContent=v})}
+$('btnHome').addEventListener('click',()=>{FX.forEach(f=>{cancelFades(f.id);cur[f.id]=homeVals(f)});syncSliders()});
+$('btnBlack').addEventListener('click',()=>{FX.forEach(f=>setTarget(f.id,'dim',0,0.5))});
+
+/* ---------- сцени ---------- */
+function nextNum(){return S.scenes.reduce((m,s)=>Math.max(m,s.n),0)+1}
+function snapshot(){const v={};FX.forEach(f=>v[f.id]=TYPES[f.t].ch.map(p=>Math.round(clamp(cur[f.id][p],0,255))));return v}
+function recMsg(t,cls){$('recMsg').innerHTML=t?badge(cls,t):''}
+$('btnRec').addEventListener('click',()=>{
+ const n=Math.round(+$('scNum').value||nextNum()),name=$('scName').value.trim(),up=+$('scUp').value,down=+$('scDown').value;
+ if(!name){recMsg('Вкажіть назву сцени.','bad');$('scName').focus();return}
+ if(!(up>=0&&up<=30)||!(down>=0&&down<=30)){recMsg('Час переходу — від 0 до 30 с.','bad');return}
+ const ex=S.scenes.find(s=>s.n===n);
+ if(ex&&recArm!==n){recArm=n;recMsg(`Сцена №${n} вже існує. Натисніть «Записати сцену» ще раз, щоб перезаписати її.`,'warn');setTimeout(()=>{if(recArm===n)recArm=null},6000);return}recArm=null;
+ const sc={n,name,up,down,v:snapshot()};
+ if(ex)Object.assign(ex,sc);else S.scenes.push(sc);
+ S.scenes.sort((a,b)=>a.n-b.n);save();renderScenes();
+ recMsg(`Сцену №${n} «${name}» записано.`,'ok');$('scName').value='';$('scNum').value=nextNum()});
+['scName','scNum'].forEach(id=>$(id).addEventListener('input',()=>$('recMsg').textContent=''));
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function renderScenes(){
+ if(!S.scenes.length){$('scTbl').innerHTML='<tr><td class="note">Сцен ще немає. Виставте прилади і натисніть «Записати сцену».</td></tr>';return}
+ let h='<tr><th>№</th><th>Назва</th><th>Fade up</th><th>Fade down</th><th>Дії</th></tr>';
+ S.scenes.forEach((s,i)=>{h+=`<tr><td>${s.n}</td><td>${esc(s.name)}</td><td>${s.up} с</td><td>${s.down} с</td><td class="row" style="gap:6px">
+ <button class="sm go" data-play="${i}">▶ Відтворити</button><button class="sm" data-load="${i}" title="Миттєво завантажити значення в програматор для редагування">Редагувати</button>
+ <button class="sm danger" data-del="${i}">Видалити</button></td></tr>`});
+ $('scTbl').innerHTML=h}
+$('scTbl').addEventListener('click',e=>{const d=e.target.dataset;
+ if(d.play!==undefined){const s=S.scenes[+d.play];stopChase();SH.playing=false;
+  const same=FX.every(f=>{const v=s.v[f.id];return !v||TYPES[f.t].ch.every((p,i)=>Math.abs(cur[f.id][p]-v[i])<1.5)});
+  const lit=FX.some(f=>{const v=s.v[f.id];return v&&v[TYPES[f.t].ch.indexOf('dim')]>0});
+  if(same&&lit){fades=[];FX.forEach(f=>{cur[f.id].dim=0});playScene({v:s.v,up:Math.max(s.up,0.8),down:s.down})}else playScene(s);
+  recMsg(`Відтворюється сцена №${s.n} «${esc(s.name)}» (fade up ${s.up} с, fade down ${s.down} с).`+(same&&lit?' Ця сцена вже була на сцені, тому її показано з темряви.':'')+(lit?'':' Увага: у цій сцені всі прилади погашені (Dimmer = 0).'),lit?'ok':'warn');
+  setTimeout(syncSliders,50)}
+ if(d.load!==undefined){const s=S.scenes[+d.load];playScene(Object.assign({},s,{up:0,down:0}));$('scNum').value=s.n;$('scName').value=s.name;$('scUp').value=s.up;$('scDown').value=s.down;syncSliders();recMsg(`Сцену №${s.n} завантажено. Змініть значення і натисніть «Записати сцену», щоб перезаписати.`,'warn')}
+ if(d.del!==undefined){if(!armed(e.target,'Точно видалити?'))return;const s=S.scenes[+d.del],u=usedIn('scene',s.n);S.scenes.splice(+d.del,1);save();renderScenes();$('scNum').value=nextNum();
+  recMsg(`Сцену №${s.n} «${esc(s.name)}» видалено.`+(u.length?` Увага: вона використовувалась (${u.join(', ')}) — виправте ці місця.`:''),u.length?'warn':'ok')}});
+
+/* ---------- візуалізація ---------- */
+function rgbOf(v){const w=v.w||0;return [clamp(v.r+w*.95,0,255),clamp(v.g+w*.9,0,255),clamp(v.b+w*.8,0,255)].map(Math.round)}
+function flash(val,now,isRate){if(isRate){if(val<1)return 0}else if(val<=10)return 1;
+ let hz=isRate?1+val/255*24:1+(val-11)/244*19;if($('softStrobe').checked)hz=Math.min(hz,3);
+ return ((now/1000*hz)%1)<(isRate?0.18:0.45)?1:0}
+function poolShapes(x,y,rx,ry,gobo,fill){
+ if(gobo<64)return `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}"/>`;
+ if(gobo<128){let s='';[[0,0],[-.5,-.35],[.5,-.35],[-.5,.35],[.5,.35]].forEach(([a,b])=>s+=`<ellipse cx="${x+a*rx}" cy="${y+b*ry}" rx="${rx*.26}" ry="${ry*.26}" fill="${fill}"/>`);return s}
+ if(gobo<192)return `<ellipse cx="${x}" cy="${y}" rx="${rx*.8}" ry="${ry*.8}" fill="none" stroke="${fill}" stroke-width="${Math.max(4,ry*.35)}"/>`;
+ let s='';[-.55,0,.55].forEach(a=>s+=`<ellipse cx="${x+a*rx}" cy="${y}" rx="${rx*.16}" ry="${ry*.95}" fill="${fill}"/>`);return s}
+let frame=0;
+function render(now){
+ frame++;showTick(now);chaseTick(now);stepFades(now);writeDmx();
+ if(frame%3===0)updTransport();
+ const haze=$('haze').checked?1:0.35;
+ const V={};FX.forEach(f=>V[f.id]=readFix(f));
+ FX.filter(f=>f.t==='spot').forEach(f=>{const v=V[f.id],d=disp[f.id],k=0.3-v.spd/255*0.285;d.pan+=(v.pan-d.pan)*k;d.tilt+=(v.tilt-d.tilt)*k});
+ if(VIEW==='3d'&&G3)draw3D(V,now,haze);else drawSVG(V,now,haze);
+ if(frame%8===0){document.querySelectorAll('[data-dot]').forEach(dEl=>{const f=FXI[dEl.dataset.dot],v=V[f.id];let c;
+  if(f.t==='fresnel')c=`rgba(255,196,130,${v.dim/255})`;else if(f.t==='strobe')c=`rgba(255,255,255,${v.dim/255})`;else{const q=rgbOf(v);c=`rgba(${q},${v.dim/255})`}dEl.style.background=c});
+  if(fades.length)syncSliders()}
+ requestAnimationFrame(render)}
+function drawSVG(V,now,haze){let defs='',back='',beams='',fix='',band='';
+ // Fresnel (фронтальне заливне світло)
+ let fr=0;['F1','F2'].forEach(id=>{const f=FXI[id],a=V[id].dim/255;fr+=a/2;
+  defs+=`<radialGradient id="fp${id}"><stop offset="0" stop-color="rgb(255,196,130)" stop-opacity="${.75*a}"/><stop offset="1" stop-color="rgb(255,196,130)" stop-opacity="0"/></radialGradient>`;
+  back+=`<ellipse cx="${f.x}" cy="372" rx="230" ry="52" fill="url(#fp${id})"/>`;
+  fix+=`<rect x="${f.x-14}" y="414" width="28" height="12" rx="3" fill="${a>.02?`rgb(255,${190},${120})`:'#4a4a55'}" opacity="${.4+.6*a}"/><text x="${f.x}" y="410" fill="#8b8ea0" font-size="11" text-anchor="middle">${id}</text>`});
+ // Wash (підсвічування задника знизу)
+ FX.filter(f=>f.t==='wash').forEach(f=>{const v=V[f.id],c=rgbOf(v);let a=v.dim/255*flash(v.str,now,false)*(Math.max(...c)/255);const cs=`rgb(${c})`;
+  const top=60+v.zoom/255*170;
+  defs+=`<linearGradient id="wb${f.id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${cs}" stop-opacity="${.55*a*haze}"/><stop offset="1" stop-color="${cs}" stop-opacity="0"/></linearGradient>
+  <radialGradient id="wg${f.id}"><stop offset="0" stop-color="${cs}" stop-opacity="${.6*a}"/><stop offset=".6" stop-color="${cs}" stop-opacity="${.22*a}"/><stop offset="1" stop-color="${cs}" stop-opacity="0"/></radialGradient>`;
+  back+=`<ellipse cx="${f.x}" cy="190" rx="${top}" ry="170" fill="url(#wg${f.id})"/>`;
+  beams+=`<polygon points="${f.x-10},322 ${f.x+10},322 ${f.x+top},0 ${f.x-top},0" fill="url(#wb${f.id})"/>`;
+  fix+=`<rect x="${f.x-16}" y="318" width="32" height="12" rx="3" fill="${a>.02?cs:'#4a4a55'}"/><text x="${f.x}" y="345" fill="#8b8ea0" font-size="11" text-anchor="middle">${f.id}</text>`});
+ // Spot (рухомі голови)
+ FX.filter(f=>f.t==='spot').forEach(f=>{const v=V[f.id],d=disp[f.id];
+  const c=rgbOf(v);const a=v.dim/255*flash(v.str,now,false)*(Math.max(...c)/255);const cs=`rgb(${c})`;
+  const ang=(d.pan-128)/128*1.05,oy=48,reach=60+d.tilt/255*350,ex=f.x+Math.tan(ang)*reach*.85,ey=oy+reach;
+  const hw=5+v.zoom/255*70,soft=v.zoom/255;
+  if(a>0.01){
+   defs+=`<linearGradient id="sb${f.id}" gradientUnits="userSpaceOnUse" x1="${f.x}" y1="${oy}" x2="${ex}" y2="${ey}"><stop offset="0" stop-color="${cs}" stop-opacity="${.8*a*haze}"/><stop offset="1" stop-color="${cs}" stop-opacity="${.1*a*haze}"/></linearGradient>
+   <radialGradient id="sp${f.id}"><stop offset="0" stop-color="${cs}" stop-opacity="${a}"/><stop offset="${(.85-soft*.55).toFixed(2)}" stop-color="${cs}" stop-opacity="${.75*a}"/><stop offset="1" stop-color="${cs}" stop-opacity="0"/></radialGradient>`;
+   beams+=`<polygon points="${f.x-4},${oy} ${f.x+4},${oy} ${ex+hw},${ey} ${ex-hw},${ey}" fill="url(#sb${f.id})"/>`;
+   if(ey>=330)back+=poolShapes(ex,ey,hw*1.5,hw*.32+3,v.gobo,`url(#sp${f.id})`);
+   else back+=poolShapes(ex,ey,hw*1.15,hw*1.15,v.gobo,`url(#sp${f.id})`);}
+  const hx=f.x+Math.sin(ang)*6;
+  fix+=`<rect x="${f.x-13}" y="32" width="26" height="9" rx="2" fill="#5a5a66"/><circle cx="${hx}" cy="${oy}" r="9" fill="#3c3c46"/><circle cx="${hx}" cy="${oy+3}" r="4.5" fill="${a>.01?cs:'#1c1c22'}"/><text x="${f.x}" y="74" fill="#8b8ea0" font-size="11" text-anchor="middle">${f.id}</text>`});
+ // Стробоскопи
+ FX.filter(f=>f.t==='strobe').forEach(f=>{const v=V[f.id];const on=flash(v.rate,now,true)*v.dim/255;const soft=$('softStrobe').checked?.45:.85;
+  defs+=`<radialGradient id="st${f.id}"><stop offset="0" stop-color="#fff" stop-opacity="${on*soft}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
+  beams+=`<ellipse cx="${f.x}" cy="120" rx="260" ry="220" fill="url(#st${f.id})"/>`;
+  fix+=`<rect x="${f.x-20}" y="34" width="40" height="18" rx="3" fill="${on>.05?'#fff':'#4a4a55'}"/><text x="${f.x}" y="66" fill="#8b8ea0" font-size="11" text-anchor="middle">${f.id}</text>`});
+ // Музиканти (силуети, підсвічуються Fresnel)
+ const L=Math.round(10+fr*120),bc=`rgb(${L},${Math.round(L*.82)},${Math.round(L*.62)})`;
+ band=`<rect x="440" y="296" width="140" height="34" fill="#1d1d24"/>
+ <circle cx="510" cy="246" r="11" fill="${bc}"/><rect x="498" y="258" width="24" height="26" rx="5" fill="${bc}"/><ellipse cx="470" cy="276" rx="17" ry="6" fill="${bc}"/><ellipse cx="552" cy="272" rx="15" ry="5" fill="${bc}"/><circle cx="510" cy="284" r="14" fill="${bc}"/>
+ ${[[270,1],[440,0],[740,1]].map(([x,g])=>`<circle cx="${x}" cy="270" r="12" fill="${bc}"/><rect x="${x-13}" y="283" width="26" height="50" rx="6" fill="${bc}"/><rect x="${x-9}" y="331" width="7" height="22" fill="${bc}"/><rect x="${x+2}" y="331" width="7" height="22" fill="${bc}"/>${g?`<rect x="${x-26}" y="300" width="52" height="10" rx="5" fill="${bc}" transform="rotate(-20 ${x} 305)"/>`:`<rect x="${x+18}" y="282" width="3" height="72" fill="#3a3a44"/>`}`).join('')}`;
+ $('sdefs').innerHTML=defs;$('gBack').innerHTML=back;$('gBand').innerHTML=band;$('gBeams').innerHTML=beams;$('gFix').innerHTML=fix}
+
+/* ---------- утиліти часу ---------- */
+function fmtT(s){s=Math.max(0,+s||0);const m=Math.floor(s/60),r=s-m*60;return m+':'+(r<10?'0':'')+r.toFixed(1)}
+function parseT(str){str=String(str).trim().replace(',','.');if(!str)return NaN;
+ if(str.includes(':')){const p=str.split(':');if(p.length!==2||p[1]==='')return NaN;return (+p[0])*60+(+p[1])}return +str}
+function tcode(s){const fr=Math.floor(s*25);return [Math.floor(fr/90000),Math.floor(fr/1500)%60,Math.floor(fr/25)%60,fr%25].map(x=>String(x).padStart(2,'0')).join(':')}
+const sceneOf=(P,n)=>(P.scenes||[]).find(s=>s.n===+n);
+const chaseOf=(P,n)=>(P.chases||[]).find(c=>c.n===+n);
+
+/* ---------- BPM, Tap tempo, метроном ---------- */
+let actx=null,lastBeat=-1;
+function click(acc){if(!$('metroOn').checked)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+ const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;o.frequency.value=acc?1600:1000;
+ g.gain.setValueAtTime(0.25,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.06);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+0.07)}catch(e){}}
+function beatFlash(){const d=$('beatDot');d.classList.add('on');setTimeout(()=>d.classList.remove('on'),90)}
+function beatTick(sec,bpm){const b=Math.floor(sec*bpm/60+1e-6);if(b!==lastBeat){lastBeat=b;click(b%4===0);beatFlash()}}
+function renderBpm(){$('bpmOn').checked=!!S.bpm.on;$('bpmVal').value=S.bpm.val;
+ $('lbTime').style.display=S.bpm.on?'none':'';$('lbBeats').style.display=S.bpm.on?'':'none';
+ $('bpmNote').textContent=S.bpm.on?`Синхронізацію увімкнено: тривалість кроку = кількість ударів × ${(60/S.bpm.val).toFixed(3)} с (один удар при ${S.bpm.val} BPM).`:'Синхронізацію вимкнено: тривалість кроку чейзу задається в секундах.'}
+$('bpmOn').addEventListener('change',e=>{S.bpm.on=e.target.checked;save();renderBpm();renderChaseList()});
+$('bpmVal').addEventListener('change',e=>{const v=Math.round(+e.target.value*10)/10;if(v>=40&&v<=240){S.bpm.val=v;save()}renderBpm();renderChaseList()});
+let taps=[];
+$('btnTap').addEventListener('click',()=>{const t=performance.now();if(taps.length&&t-taps[taps.length-1]>2000)taps=[];taps.push(t);if(taps.length>8)taps.shift();
+ if(taps.length>=3){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);S.bpm.val=clamp(Math.round(60000/iv),40,240);save();renderBpm();renderChaseList()}
+ click(true);beatFlash()});
+
+/* ---------- чейзи: рушій ---------- */
+const DIRN={fwd:'прямий',rev:'зворотний',pend:'маятниковий'},XN={snap:'різкий',fade:'плавний'};
+function stepDur(c,P){const b=P.bpm||{};return b.on?Math.max(0.05,(c.beats||1)*60/(b.val||120)):Math.max(0.05,c.time||0.5)}
+function chaseLen(c){return c.type==='run'?(c.fx||[]).length:(c.steps||[]).length}
+function chaseOrder(c){const n=chaseLen(c),a=[...Array(n).keys()];if(c.dir==='rev')return a.reverse();if(c.dir==='pend'&&n>2)return a.concat(a.slice(1,-1).reverse());return a}
+function applyStep(c,P,i,dur){const fd=c.x==='fade'?dur*0.85:0;
+ if(c.type!=='run'){const sc=sceneOf(P,c.steps[i]);if(sc)playScene({v:sc.v,up:fd,down:fd});return}
+ const base=sceneOf(P,c.base);if(!base)return;const v={};for(const id in base.v)v[id]=base.v[id].slice();
+ c.fx.forEach((id,k)=>{if(k!==i&&v[id])v[id][TYPES[FXI[id].t].ch.indexOf('dim')]=0});playScene({v,up:fd,down:fd})}
+let CH=null;
+function startChase(c,P,test){CH=null;if(chaseLen(c)<1)return;const order=chaseOrder(c),now=performance.now();
+ CH={c,P,order,k:0,t0:now,start:now,test:!!test};applyStep(c,P,order[0],stepDur(c,P))}
+function stopChase(){CH=null}
+function chaseTick(now){if(!CH)return;const d=stepDur(CH.c,CH.P)*1000;
+ if(CH.test&&CH.P.bpm&&CH.P.bpm.on)beatTick((now-CH.start)/1000,CH.P.bpm.val);
+ if(now-CH.t0>=d){CH.t0+=d;if(now-CH.t0>d)CH.t0=now;CH.k=(CH.k+1)%CH.order.length;applyStep(CH.c,CH.P,CH.order[CH.k],d/1000)}}
+function chaseProblem(c,P){
+ if(c.type!=='run'){if((c.steps||[]).length<2)return 'потрібно щонайменше 2 кроки';if(c.steps.some(n=>!sceneOf(P,n)))return 'є кроки з видаленими сценами'}
+ else{if(!sceneOf(P,c.base))return 'не вибрано базову сцену';if((c.fx||[]).length<2)return 'потрібно щонайменше 2 прилади в порядку'}
+ if(!(c.time>=0.05&&c.time<=10))return 'час кроку — від 0,05 до 10 с';if(!(c.beats>=0.25&&c.beats<=16))return 'кількість ударів — від 0,25 до 16';return ''}
+
+/* ---------- чейзи: редактор ---------- */
+let CE={steps:[],fx:[]};
+function chMsg(t,cls){$('chMsg').innerHTML=t?badge(cls,t):''}
+function nextChaseNum(){return S.chases.reduce((m,c)=>Math.max(m,c.n),0)+1}
+function renderChaseUI(){renderBpm();
+ const opts=S.scenes.length?S.scenes.map(s=>`<option value="${s.n}">Сцена ${s.n} — ${esc(s.name)}</option>`).join(''):'<option value="">— спершу запишіть сцени —</option>';
+ const bsel=$('chBase').value;$('chAddSel').innerHTML=opts;$('chBase').innerHTML=opts;if(bsel&&sceneOf(S,bsel))$('chBase').value=bsel;
+ if(!$('chNum').value)$('chNum').value=nextChaseNum();
+ const run=$('chType').value==='run';$('chScenesBox').style.display=run?'none':'';$('chRunBox').style.display=run?'':'none';
+ $('chSteps').innerHTML=CE.steps.length?CE.steps.map((n,i)=>{const sc=sceneOf(S,n);return `<span class="chip" data-rm="${i}" title="Клацніть, щоб видалити крок">${i+1}. ${sc?esc(sc.name):'<span class="bad">сцену '+n+' видалено</span>'}<span class="x">×</span></span>`}).join(''):'<span class="note">Кроків ще немає.</span>';
+ $('chRunPick').innerHTML=FX.map(f=>`<span class="chip" data-pick="${f.id}">${f.id}</span>`).join('');
+ $('chRunOrder').innerHTML=CE.fx.length?CE.fx.map((id,i)=>`<span class="chip on" data-rmfx="${i}" title="Клацніть, щоб видалити">${i+1}. ${id}<span class="x">×</span></span>`).join(''):'<span class="note">—</span>';
+ renderChaseList()}
+function editorChase(){return {n:Math.round(+$('chNum').value||nextChaseNum()),name:$('chName').value.trim(),type:$('chType').value,steps:CE.steps.slice(),base:+$('chBase').value||null,fx:CE.fx.slice(),dir:$('chDir').value,x:$('chX').value,time:+$('chTime').value,beats:+$('chBeats').value}}
+$('chType').addEventListener('change',renderChaseUI);
+$('chAdd').addEventListener('click',()=>{const n=+$('chAddSel').value;if(!n){chMsg('Спершу запишіть сцени у вкладці «Сцени».','bad');return}CE.steps.push(n);renderChaseUI()});
+$('chClr').addEventListener('click',()=>{CE.steps=[];renderChaseUI()});
+$('chSteps').addEventListener('click',e=>{const c=e.target.closest('[data-rm]');if(c){CE.steps.splice(+c.dataset.rm,1);renderChaseUI()}});
+$('chRunPick').addEventListener('click',e=>{const c=e.target.closest('[data-pick]');if(c){CE.fx.push(c.dataset.pick);renderChaseUI()}});
+$('chRunOrder').addEventListener('click',e=>{const c=e.target.closest('[data-rmfx]');if(c){CE.fx.splice(+c.dataset.rmfx,1);renderChaseUI()}});
+$('chRunClr').addEventListener('click',()=>{CE.fx=[];renderChaseUI()});
+function testChase(c){const p=chaseProblem(c,S);if(p){chMsg('Не можна запустити: '+p+'.','bad');return}
+ if(PLAY)setPlay(null);if(SH.playing)showStop();lastBeat=-1;startChase(c,S,true);chMsg('Тест чейзу запущено. Зупинити — «■ Стоп».','ok')}
+$('chTest').addEventListener('click',()=>testChase(editorChase()));
+$('chStop').addEventListener('click',()=>{stopChase();chMsg('','')});
+$('chRec').addEventListener('click',()=>{const c=editorChase();if(!c.name){chMsg('Вкажіть назву чейзу.','bad');$('chName').focus();return}
+ const p=chaseProblem(c,S);if(p){chMsg('Не можна записати: '+p+'.','bad');return}
+ const ex=S.chases.find(x=>x.n===c.n);if(ex&&chArm!==c.n){chArm=c.n;chMsg(`Чейз №${c.n} вже існує. Натисніть «Записати чейз» ще раз, щоб перезаписати його.`,'warn');setTimeout(()=>{if(chArm===c.n)chArm=null},6000);return}chArm=null;
+ if(ex)Object.assign(ex,c);else S.chases.push(c);S.chases.sort((a,b)=>a.n-b.n);save();newChase(false);chMsg(`Чейз №${c.n} «${esc(c.name)}» записано.`,'ok')});
+function newChase(clear=true){CE={steps:[],fx:[]};$('chName').value='';$('chNum').value=nextChaseNum();if(clear)chMsg('','');renderChaseUI()}
+$('chNew').addEventListener('click',()=>newChase());
+$('chName').addEventListener('input',()=>chMsg('',''));
+function renderChaseList(){
+ if(!S.chases.length){$('chTbl').innerHTML='<tr><td class="note">Чейзів ще немає.</td></tr>';return}
+ let h='<tr><th>№</th><th>Назва</th><th>Тип</th><th>Кроків</th><th>Крок</th><th>Напрямок</th><th>Перехід</th><th>Дії</th></tr>';
+ S.chases.forEach((c,i)=>{const p=chaseProblem(c,S);
+  h+=`<tr><td>${c.n}</td><td>${esc(c.name)}${p?`<div class="note">${badge('bad',p)}</div>`:''}</td><td>${c.type==='run'?'біг по приладах':'сцени'}</td><td>${chaseLen(c)}</td>
+  <td>${S.bpm.on?c.beats+' уд. = '+stepDur(c,S).toFixed(2)+' с':c.time+' с'}</td><td>${DIRN[c.dir]}</td><td>${XN[c.x]}</td>
+  <td class="row" style="gap:6px"><button class="sm go" data-ctest="${i}">▶ Тест</button><button class="sm" data-cedit="${i}">Редагувати</button><button class="sm danger" data-cdel="${i}">Видалити</button></td></tr>`});
+ $('chTbl').innerHTML=h}
+$('chTbl').addEventListener('click',e=>{const d=e.target.dataset;
+ if(d.ctest!==undefined)testChase(S.chases[+d.ctest]);
+ if(d.cedit!==undefined){const c=S.chases[+d.cedit];$('chNum').value=c.n;$('chName').value=c.name;$('chType').value=c.type;$('chDir').value=c.dir;$('chX').value=c.x;$('chTime').value=c.time;$('chBeats').value=c.beats;
+  CE={steps:(c.steps||[]).slice(),fx:(c.fx||[]).slice()};renderChaseUI();if(c.base)$('chBase').value=c.base;chMsg(`Чейз №${c.n} завантажено в редактор. Змініть і натисніть «Записати чейз».`,'warn')}
+ if(d.cdel!==undefined){if(!armed(e.target,'Точно видалити?'))return;const c=S.chases[+d.cdel],u=usedIn('chase',c.n);if(CH&&CH.c===c)stopChase();S.chases.splice(+d.cdel,1);save();renderChaseUI();$('chNum').value=nextChaseNum();
+  chMsg(`Чейз №${c.n} «${esc(c.name)}» видалено.`+(u.length?` Увага: він використовувався (${u.join(', ')}) — виправте ці місця.`:''),u.length?'warn':'ok')}});
+
+/* ---------- шоу: рушій відтворення ---------- */
+const PARTS=['Вступ','Куплет 1','Приспів 1','Куплет 2','Приспів 2','Соло','Фінал','Інше'];
+const SH={playing:false,t0:0,pos:0,idx:-1,mode:'auto'};
+const AU={el:null,url:null,ready:false,name:'',dur:0,peaks:null,env:null};
+function showEndOf(P){return P.showEnd||60}
+function curShowT(){if(SH.playing&&musicOn())return Math.max(0,AU.el.currentTime-musicStart());return SH.playing?(performance.now()-SH.t0)/1000:SH.pos}
+function cueIndexAt(P,t){let k=-1;P.show.forEach((c,i)=>{if(c.t<=t+1e-6)k=i});return k}
+function blackoutAll(d){FX.forEach(f=>setTarget(f.id,'dim',0,d))}
+function fireCue(P,i,instant){SH.idx=i;stopChase();if(i<0){blackoutAll(instant?0:1);return}
+ const c=P.show[i];
+ if(c.type==='black')blackoutAll(instant?0:1);
+ else if(c.type==='scene'){const sc=sceneOf(P,c.ref);if(sc)playScene(instant?{v:sc.v,up:0,down:0}:sc)}
+ else if(c.type==='chase'){const ch=chaseOf(P,c.ref);if(ch)startChase(ch,P,false)}}
+function goMsg(t,cls){$('goMsg').innerHTML=t?badge(cls,t):''}
+function showPlay(){const P=PROG();if(!P.show.length){goMsg('У програмі шоу ще немає кроків.','bad');return}
+ stopChase();if(SH.pos>=showEndOf(P))SH.pos=0;SH.t0=performance.now()-SH.pos*1000;SH.playing=true;lastBeat=-1;
+ if(musicOn())audioPlayFrom(SH.pos);
+ try{if(actx)actx.resume()}catch(e){}
+ if(SH.mode==='auto'){fireCue(P,cueIndexAt(P,SH.pos),SH.pos>0);goMsg('','')}
+ else{const i=cueIndexAt(P,SH.pos);if(SH.pos===0){SH.idx=-1;blackoutAll(0)}else fireCue(P,i,true);
+  goMsg('Play and Go: '+(musicOn()?'пісня':'«музика»')+' грає, а кожен наступний крок запускаєте ви — кнопкою GO або пробілом.','warn')}}
+function showPause(){if(SH.playing){SH.pos=curShowT();SH.playing=false;stopChase();audioPause()}}
+function showStop(){SH.playing=false;SH.pos=0;SH.idx=-1;stopChase();blackoutAll(0.5);audioPause();if(AU.el&&AU.ready)try{AU.el.currentTime=musicStart()}catch(e){}}
+function showSeek(t){const P=PROG();t=clamp(t,0,showEndOf(P));SH.pos=t;if(SH.playing)SH.t0=performance.now()-t*1000;lastBeat=-1;
+ if(musicOn())try{AU.el.currentTime=musicStart()+t}catch(e){}fireCue(P,cueIndexAt(P,t),true)}
+function showTick(now){if(!SH.playing)return;const P=PROG(),t=curShowT(),end=showEndOf(P);
+ if((P.bpm&&P.bpm.on)||$('metroOn').checked)beatTick(t-gridOrigin(P),P.bpm.val);
+ if(t>=end){SH.playing=false;SH.pos=end;stopChase();audioPause();goMsg('Шоу завершено.','ok');return}
+ if(musicOn()&&AU.el.ended){SH.playing=false;SH.pos=t;stopChase();goMsg('Пісня закінчилася раніше, ніж шоу. Зменште «Кінець шоу» або натисніть «Кінець шоу = кінець пісні».','warn');return}
+ if(SH.mode==='auto'){const i=cueIndexAt(P,t);if(i!==SH.idx)fireCue(P,i,false)}}
+function showGo(){const P=PROG();if(SH.mode!=='go')return;if(!SH.playing)showPlay();
+ const i=SH.idx+1;if(i>=P.show.length){goMsg('Усі кроки вже виконано.','warn');return}
+ const t=curShowT(),d=t-P.show[i].t;fireCue(P,i,false);
+ goMsg(`GO → крок ${i+1}: заплановано ${fmtT(P.show[i].t)}, натиснуто ${fmtT(t)} — ${Math.abs(d)<0.25?'точно вчасно':d>0?'запізнення '+d.toFixed(1)+' с':'раніше на '+(-d).toFixed(1)+' с'}.`,Math.abs(d)<0.5?'ok':'warn')}
+function cueLabel(P,c){if(c.type==='black')return 'Blackout';if(c.type==='scene'){const s=sceneOf(P,c.ref);return s?`Сцена ${s.n} «${s.name}»`:'Сцена не вибрана'}
+ const ch=chaseOf(P,c.ref);return ch?`Чейз ${ch.n} «${ch.name}»`:'Чейз не вибраний'}
+function updTransport(){const P=PROG(),t=curShowT(),end=showEndOf(P);$('tc').textContent=tcode(t);
+ const sc=$('scrub');if(+sc.max!==end)sc.max=end;if(document.activeElement!==sc)sc.value=t.toFixed(1);
+ const ph=$('playhead');if(ph)ph.style.left=Math.min(100,t/end*100)+'%';
+ const c=P.show[SH.idx],hidden=PLAY&&PLAY.kind==='demo';
+ const partTxt=c?(c.part+(hidden?'':' · '+cueLabel(P,c))):(SH.playing?'до першого кроку':'—');
+ $('tcPart').textContent=partTxt+(musicOn()?` · у пісні ${fmtT(musicStart()+t)}`:'');
+ const goTxt=SH.idx+1<P.show.length?`GO → крок ${SH.idx+2}`:'GO';
+ if(SH.mode==='go'){$('shGo').textContent=goTxt;$('fsGo').textContent=goTxt}
+ if(document.getElementById('stageBox').classList.contains('fs')){$('fsTc').textContent=tcode(t);$('fsPart').textContent=partTxt}}
+function setMode(m){SH.mode=m;document.querySelectorAll('input[name=pmode],input[name=fsmode]').forEach(r=>r.checked=r.value===m);$('shGo').style.display=m==='go'?'inline-block':'none';$('fsGo').style.display=m==='go'?'inline-block':'none'}
+document.querySelectorAll('input[name=pmode],input[name=fsmode]').forEach(r=>r.addEventListener('change',()=>{setMode(r.value);if(SH.playing&&r.value==='auto')fireCue(PROG(),cueIndexAt(PROG(),curShowT()),true)}));
+$('shPlay').addEventListener('click',showPlay);$('shPause').addEventListener('click',showPause);
+$('shStop').addEventListener('click',()=>{showStop();goMsg('','')});$('shGo').addEventListener('click',showGo);
+$('scrub').addEventListener('input',e=>showSeek(+e.target.value));
+document.addEventListener('keydown',e=>{const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=='radio'&&document.activeElement.type!=='checkbox';
+ if(fsOn()){if(e.code==='Space'&&!typing){e.preventDefault();if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();if(SH.mode==='go')showGo();else if(SH.playing)showPause();else showPlay();return}
+  if(e.key==='Escape'&&$('stageBox').classList.contains('pseudo')){exitFS();return}}
+ if(typing||!$('t-show').classList.contains('on'))return;
+ if(e.code==='Space'&&SH.mode==='go'&&document.activeElement.tagName!=='BUTTON'){e.preventDefault();showGo()}
+ if((e.key==='m'||e.key==='M'||e.key==='ь'||e.key==='Ь')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!PLAY){e.preventDefault();markCue()}});
+
+/* ---------- шоу: таймлайн і cue list ---------- */
+const TLC={scene:'#c98b2a',chase:'#4cc3b0',black:'#55586a'};
+function renderTimeline(){const P=PROG(),end=showEndOf(P);
+ if(PLAY&&PLAY.kind==='demo'){$('tlBlocks').innerHTML='<div class="blk" style="flex:1;background:#2f343f;color:var(--muted)">Програму прикладу приховано</div>';drawWave();return}
+ const sh=P.show.filter(c=>c.t<end);let h='';
+ if(sh.length&&sh[0].t>0)h+=`<div class="blk" style="flex:none;width:${sh[0].t/end*100}%;background:#15161c"></div>`;
+ sh.forEach((c,i)=>{const t1=i+1<sh.length?sh[i+1].t:end;h+=`<div class="blk" data-seek="${c.t}" title="${fmtT(c.t)} · ${esc(c.part)} · ${esc(cueLabel(P,c))}" style="flex:none;width:${(t1-c.t)/end*100}%;background:${TLC[c.type]};--bc:${TLC[c.type]}">${i+1}</div>`});
+ $('tlBlocks').innerHTML=h;drawWave()}
+$('timeline').addEventListener('click',e=>{const r=$('timeline').getBoundingClientRect();if(r.width<=0)return;showSeek(clamp((e.clientX-r.left)/r.width,0,1)*showEndOf(PROG()))});
+function refOpts(c){if(c.type==='black')return '<option value="">—</option>';const list=c.type==='scene'?S.scenes:S.chases;
+ let h=(c.ref==null&&list.length?'<option value="" selected>— оберіть —</option>':'')+list.map(x=>`<option value="${x.n}" ${+c.ref===x.n?'selected':''}>${x.n} — ${esc(x.name)}</option>`).join('');
+ if(c.ref!=null&&!list.find(x=>x.n===+c.ref))h+=`<option value="${c.ref}" selected>${c.ref} — видалено!</option>`;
+ return h||`<option value="">немає ${c.type==='scene'?'сцен':'чейзів'}</option>`}
+function cueProblems(P){const pr=[],end=showEndOf(P);
+ P.show.forEach((c,i)=>{if(!(c.t>=0))pr.push(`крок ${i+1}: неправильний час`);else if(c.t>=end)pr.push(`крок ${i+1}: починається після кінця шоу`);
+  if(i&&Math.abs(c.t-P.show[i-1].t)<0.05)pr.push(`кроки ${i} і ${i+1} мають однаковий час`);
+  if(c.type==='scene'&&!sceneOf(P,c.ref))pr.push(`крок ${i+1}: сцену не вибрано або видалено`);
+  if(c.type==='chase'&&!chaseOf(P,c.ref))pr.push(`крок ${i+1}: чейз не вибрано або видалено`)});return pr}
+function renderCues(){$('shEnd').value=fmtT(S.showEnd).replace(/\.0$/,'');
+ if(!S.show.length)$('cueTbl').innerHTML='<tr><td class="note">Кроків ще немає. Натисніть «Додати крок».</td></tr>';
+ else{let h='<tr><th>№</th><th>Старт</th><th>Частина пісні</th><th>Тип</th><th>Сцена / чейз</th><th>Триває</th><th>Примітка</th><th></th></tr>';
+  S.show.forEach((c,i)=>{const t1=i+1<S.show.length?S.show[i+1].t:S.showEnd;
+   h+=`<tr><td>${i+1}</td><td><input data-ci="${i}" data-f="t" value="${fmtT(c.t)}" style="width:76px"></td>
+   <td><select data-ci="${i}" data-f="part">${PARTS.map(p=>`<option ${p===c.part?'selected':''}>${p}</option>`).join('')}</select></td>
+   <td><select data-ci="${i}" data-f="type"><option value="scene" ${c.type==='scene'?'selected':''}>Сцена</option><option value="chase" ${c.type==='chase'?'selected':''}>Чейз</option><option value="black" ${c.type==='black'?'selected':''}>Blackout</option></select></td>
+   <td><select data-ci="${i}" data-f="ref" style="min-width:170px" ${c.type==='black'?'disabled':''}>${refOpts(c)}</select></td>
+   <td>${Math.max(0,t1-c.t).toFixed(1)} с</td>
+   <td><input data-ci="${i}" data-f="note" value="${esc(c.note||'')}" style="width:140px" placeholder="соло гітари"></td>
+   <td><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="sm go" data-cfrom="${i}" title="Відтворити з цього місця">▶</button><button class="sm danger" data-cdelc="${i}" title="Видалити крок">×</button></span></td></tr>`});
+  $('cueTbl').innerHTML=h}
+ const pr=cueProblems(S),end=S.showEnd;
+ $('cueMsg').innerHTML=`Тривалість шоу ${fmtT(end)} · кроків: ${S.show.length}. `+(end>=50?badge('ok','тривалість не менше 0:50'):badge('warn','Мінімальна тривалість шоу — 0:50.'))+(AU.ready&&!PLAY&&musicStart()+end>AU.dur+0.05?' · '+badge('warn','шоу довше за пісню (від початку фрагмента до кінця пісні '+fmtT(AU.dur-musicStart())+')'):'')+(pr.length?`<div>${pr.map(x=>badge('bad',esc(x))).join('<br>')}</div>`:(S.show.length?' · '+badge('ok','помилок у cue list немає'):''));
+ renderTimeline()}
+$('cueTbl').addEventListener('change',e=>{const i=e.target.dataset.ci,f=e.target.dataset.f;if(i===undefined)return;const c=S.show[+i];
+ if(f==='t'){const v=parseT(e.target.value);if(!(v>=0)){e.target.classList.add('bad');$('cueMsg').innerHTML=badge('bad','Час введіть у форматі 1:05.5 або 65.5.');return}c.t=snapT(v);S.show.sort((a,b)=>a.t-b.t)}
+ else if(f==='type'){c.type=e.target.value;const list=c.type==='scene'?S.scenes:S.chases;c.ref=c.type==='black'?null:(list[0]?list[0].n:null)}
+ else if(f==='ref')c.ref=+e.target.value||null;else c[f]=e.target.value;
+ save();setTimeout(renderCues,0)});
+$('cueTbl').addEventListener('click',e=>{const d=e.target.dataset;
+ if(d.cfrom!==undefined){if(PLAY)setPlay(null);setMode('auto');showSeek(S.show[+d.cfrom].t);showPlay()}
+ if(d.cdelc!==undefined){S.show.splice(+d.cdelc,1);save();renderCues()}});
+$('cueAdd').addEventListener('click',()=>{const last=S.show[S.show.length-1];const t=last?Math.min(last.t+5,S.showEnd-1):0;
+ S.show.push({t:Math.round(t*10)/10,part:last?last.part:'Вступ',type:S.scenes.length?'scene':'black',ref:S.scenes[0]?S.scenes[0].n:null,note:''});
+ S.show.sort((a,b)=>a.t-b.t);save();renderCues()});
+$('shEnd').addEventListener('change',e=>{const v=parseT(e.target.value);if(v>=10&&v<=1800){S.showEnd=Math.round(v*10)/10;save()}setTimeout(renderCues,0)});
+
+/* ---------- музика (необов'язково): пісня як таймкод шоу ---------- */
+const AUDIO_EXT=/\.(mp3|wav|ogg|oga|m4a|aac|flac|webm|opus)$/i;
+function musicStart(){return (S.music&&S.music.start)||0}
+function musicOn(){return !!(AU.el&&AU.ready&&!PLAY&&$('muUse').checked)}
+function audioPause(){if(AU.el&&!AU.el.paused)AU.el.pause()}
+function audioPlayFrom(t){try{AU.el.currentTime=musicStart()+t}catch(e){}
+ const p=AU.el.play();if(p&&p.catch)p.catch(()=>muMsg('Браузер не дозволив відтворити звук. Натисніть «▶ Відтворити» ще раз.','warn'))}
+function muMsg(t,cls){$('muMsg').innerHTML=t?badge(cls,t):''}
+function gridOrigin(P){P=P||PROG();const m=P.music;if(m&&m.beat0!=null&&P.bpm&&P.bpm.val){const per=60/P.bpm.val;let o=(m.beat0-(m.start||0))%per;if(o<0)o+=per;return o}return 0}
+function snapT(t){if(!$('snapBeat').checked||!(S.bpm.val>0))return Math.round(t*10)/10;
+ const per=60/S.bpm.val,o=gridOrigin(S);return Math.max(0,Math.round((o+Math.round((t-o)/per)*per)*100)/100)}
+function unloadAudio(keepMeta){audioPause();if(AU.url)try{URL.revokeObjectURL(AU.url)}catch(e){}
+ AU.el=null;AU.url=null;AU.ready=false;AU.name='';AU.dur=0;AU.peaks=null;AU.env=null;
+ if(!keepMeta){S.music=null;save()}}
+function loadAudioFile(file){
+ if(!file)return;
+ if(!$('muAgree').checked){muMsg('Спершу ознайомтеся з умовами використання музики і поставте галочку вище.','bad');$('muAgree').focus();return}
+ if(!(/^audio\//.test(file.type||'')||AUDIO_EXT.test(file.name))){muMsg(`Файл «${esc(file.name)}» не схожий на аудіофайл. Підтримуються: MP3, WAV, OGG, M4A (AAC), FLAC, WEBM / OPUS.`,'bad');return}
+ if(PLAY)setPlay(null);if(SH.playing)showPause();unloadAudio(true);
+ const url=URL.createObjectURL(file),a=new Audio();a.preload='auto';AU.el=a;AU.url=url;AU.name=file.name;
+ muMsg(`Відкриваю «${esc(file.name)}»…`,'warn');
+ a.addEventListener('loadedmetadata',()=>{if(AU.el!==a)return;AU.ready=true;AU.dur=a.duration;
+  const same=S.music&&S.music.name===file.name;
+  S.music={name:file.name,dur:Math.round(a.duration*10)/10,start:same?S.music.start:0,beat0:same?S.music.beat0:null};
+  if(!(S.music.start<a.duration))S.music.start=0;save();a.volume=+$('muVol').value;
+  showStop();renderMusic();renderCues();
+  muMsg(`Пісню «${esc(file.name)}» відкрито (${fmtT(a.duration)}). Тепер шоу відтворюється разом із нею, а таймкод іде за піснею.`,'ok');
+  analyseAudio(file,a)},{once:true});
+ a.addEventListener('error',()=>{if(AU.el!==a)return;unloadAudio(true);renderMusic();renderTimeline();
+  muMsg(`Браузер не може відтворити «${esc(file.name)}». Спробуйте файл MP3 або WAV.`,'bad')},{once:true});
+ a.src=url}
+async function analyseAudio(file,a){try{
+ const buf=await file.arrayBuffer();const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;const ctx=new Ctx();
+ const ab=await new Promise((res,rej)=>{const p=ctx.decodeAudioData(buf,res,rej);if(p&&p.then)p.then(res,rej)});
+ try{ctx.close()}catch(e){}
+ if(AU.el!==a)return;
+ const sr=ab.sampleRate,n=ab.length,d0=ab.getChannelData(0),d1=ab.numberOfChannels>1?ab.getChannelData(1):null;
+ const hop=Math.max(1,Math.floor(sr/100)),frames=Math.floor(n/hop),pk=new Float32Array(frames),en=new Float32Array(frames);
+ for(let f=0;f<frames;f++){let m=0,e=0;const o=f*hop;for(let i=0;i<hop;i++){const v=d1?(d0[o+i]+d1[o+i])*0.5:d0[o+i];const q=v<0?-v:v;if(q>m)m=q;e+=v*v}pk[f]=m;en[f]=Math.sqrt(e/hop)}
+ let mx=0;for(let f=0;f<frames;f++)if(pk[f]>mx)mx=pk[f];if(mx>0)for(let f=0;f<frames;f++)pk[f]/=mx;
+ AU.peaks=pk;AU.env=en;renderMusic();renderTimeline()}
+ catch(e){if(AU.el===a){AU.peaks=null;renderMusic()}}}
+/* темп і фаза: автокореляція огинаючої «атак» (зростань гучності) */
+function detectTempo(){const en=AU.env;if(!en)return null;
+ const s0=Math.min(en.length-1,Math.floor(musicStart()*100)),s1=Math.min(en.length,s0+100*90),N=s1-s0;if(N<600)return null;
+ const on=new Float32Array(N);for(let i=1;i<N;i++){const d=en[s0+i]-en[s0+i-1];on[i]=d>0?d:0}
+ const sc=[];let best=0,bestL=0;
+ for(let L=30;L<=90;L++){let s=0;for(let i=0;i+L<N;i++)s+=on[i]*on[i+L];s/=(N-L);
+  const bpm=6000/L,w=Math.exp(-Math.pow(Math.log(bpm/120)/Math.LN2,2)/0.5);sc[L]=s*w;if(sc[L]>best){best=sc[L];bestL=L}}
+ if(!bestL||!(best>0))return null;
+ let L=bestL;if(sc[L-1]!==undefined&&sc[L+1]!==undefined){const a=sc[L-1],b=sc[L],c=sc[L+1],den=a-2*b+c;if(den<0)L=L+0.5*(a-c)/den}
+ /* уточнення: спільний перебір темпу (±1,5 BPM) і фази першої долі за «гребінцем» атак */
+ const comb=(per,k)=>{let s=0;for(let t=k;t<N;t+=per){const i=Math.round(t);if(i<N)s+=on[i]+0.5*((on[i-1]||0)+(on[i+1]||0))}return s};
+ let bb=6000/L,bk=0,bs=-1;
+ for(let bp=6000/L-1.5;bp<=6000/L+1.5;bp+=0.05){const per=6000/bp;for(let k=0;k<per;k+=1){const sc2=comb(per,k);if(sc2>bs){bs=sc2;bb=bp;bk=k}}}
+ return {bpm:Math.round(bb*10)/10,beat0:Math.round(s0+bk)/100}}
+/* хвильова форма і сітка доль на таймлайні */
+function drawWave(){const cv=$('tlWave'),tl=$('timeline'),own=!PLAY;
+ tl.classList.toggle('hasmusic',!!(own&&AU.ready));
+ const dpr=Math.min(window.devicePixelRatio||1,2),W=Math.round(cv.clientWidth*dpr),H=Math.round(cv.clientHeight*dpr);if(!W||!H)return;
+ if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}const g=cv.getContext('2d');g.clearRect(0,0,W,H);
+ if(!own)return;const end=showEndOf(S),st=musicStart();
+ if(AU.ready&&AU.peaks){const pk=AU.peaks;g.fillStyle='rgba(225,230,245,.6)';
+  for(let x=0;x<W;x++){const f0=Math.floor((st+x/W*end)*100),f1=Math.max(f0+1,Math.floor((st+(x+1)/W*end)*100));let m=0;for(let f=f0;f<f1&&f<pk.length;f++)if(pk[f]>m)m=pk[f];
+   const h=Math.max(1,m*H*0.92);if(f0<pk.length)g.fillRect(x,(H-h)/2,1,h)}
+  const songEnd=(AU.dur-st)/end;if(songEnd<1){g.fillStyle='rgba(255,90,90,.25)';g.fillRect(songEnd*W,0,W-songEnd*W,H)}}
+ const grid=(S.music&&S.music.beat0!=null)||$('snapBeat').checked||S.bpm.on;
+ if(grid&&S.bpm.val>0){const per=60/S.bpm.val,o=gridOrigin(S);if(per/end*W>=3){let k=0;
+  for(let t=o;t<end;t+=per,k++){const x=Math.round(t/end*W)+0.5;g.fillStyle=k%4===0?'rgba(240,168,48,.75)':'rgba(240,168,48,.3)';g.fillRect(x,0,k%4===0?1.5*dpr:1,H)}}}}
+window.addEventListener('resize',()=>{if($('t-show').classList.contains('on'))drawWave()});
+function renderMusic(){const agreed=$('muAgree').checked;$('muDrop').classList.toggle('off',!agreed);
+ $('muDropTxt').textContent=agreed?'Перетягніть сюди аудіофайл або':'Щоб завантажити пісню, спершу поставте галочку вище. Потім перетягніть сюди аудіофайл або';
+ const has=!!(AU.el&&AU.ready);$('muCtl').style.display=has?'':'none';
+ if(has){$('muName').textContent=AU.name;$('muDur').textContent='· '+fmtT(AU.dur)+(AU.peaks?'':' · будую хвильову форму…');
+  if(document.activeElement!==$('muStart'))$('muStart').value=fmtT(musicStart());$('muTempo').disabled=!AU.env}
+ $('muPrev').innerHTML=!has&&S.music?badge('warn',`У вашій програмі збережено пісню «${esc(S.music.name)}»${S.music.start?' (фрагмент з '+fmtT(S.music.start)+')':''}. Щоб знову чути її, перетягніть цей файл сюди. Без пісні шоу відтворюється за внутрішнім таймером.`):'';
+ $('metroOn2').checked=$('metroOn').checked}
+$('muAgree').addEventListener('change',()=>{renderMusic();muMsg('','')});
+$('muFile').addEventListener('click',e=>{if(!$('muAgree').checked){e.preventDefault();muMsg('Спершу ознайомтеся з умовами використання музики і поставте галочку вище.','bad')}});
+$('muFile').addEventListener('change',e=>{loadAudioFile(e.target.files[0]);e.target.value=''});
+['dragenter','dragover'].forEach(ev=>$('muDrop').addEventListener(ev,e=>{e.preventDefault();$('muDrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('muDrop').addEventListener(ev,()=>$('muDrop').classList.remove('over')));
+$('muDrop').addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadAudioFile(f)});
+/* файл, кинутий будь-куди на сторінку, не повинен відкриватися замість неї (інакше робота загубиться) */
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;
+ document.querySelector('#tabs [data-t=show]').click();$('musicCard').scrollIntoView({behavior:'smooth',block:'center'});loadAudioFile(f)});
+$('muStart').addEventListener('change',e=>{const v=parseT(e.target.value);
+ if(!(v>=0)||!(v<AU.dur)){muMsg(`Початок фрагмента — від 0:00 до ${fmtT(AU.dur)}.`,'bad');renderMusic();return}
+ S.music.start=Math.round(v*100)/100;save();muMsg('','');const t=curShowT();if(SH.playing)showSeek(t);renderMusic();renderCues()});
+$('muFit').addEventListener('click',()=>{if(!AU.ready)return;S.showEnd=Math.max(10,Math.floor((AU.dur-musicStart())*10)/10);save();renderCues();
+ muMsg(`«Кінець шоу» = ${fmtT(S.showEnd)} — до кінця пісні.`,'ok')});
+$('muTempo').addEventListener('click',()=>{const r=detectTempo();
+ if(!r){muMsg('Не вдалося визначити темп автоматично. Скористайтеся кнопкою Tap у вкладці «Чейзи».','warn');return}
+ S.bpm.val=r.bpm;S.music.beat0=r.beat0;save();renderBpm();renderChaseList();renderTimeline();
+ muMsg(`Темп пісні ≈ ${String(r.bpm).replace('.',',')} BPM. Сітку доль показано на таймлайні (яскравіше — кожна 4-та доля). Перевірте на слух: увімкніть «Клацання метронома» і відтворіть шоу. Щоб чейзи йшли в темп пісні, увімкніть «Синхронізувати чейзи з темпом» у вкладці «Чейзи».`,'ok')});
+$('muVol').addEventListener('input',e=>{if(AU.el)AU.el.volume=+e.target.value});
+$('muUse').addEventListener('change',()=>{const t=curShowT(),was=SH.playing;if(was){SH.playing=false;audioPause()}SH.pos=t;if(was)showPlay();renderTimeline()});
+$('metroOn2').addEventListener('change',e=>{$('metroOn').checked=e.target.checked});
+$('metroOn').addEventListener('change',()=>{$('metroOn2').checked=$('metroOn').checked});
+$('muRemove').addEventListener('click',e=>{if(!armed(e.currentTarget,'Прибрати? Натисніть ще раз'))return;showStop();unloadAudio(false);renderMusic();renderCues();muMsg('Пісню прибрано. Шоу відтворюється за внутрішнім таймером.','ok')});
+$('snapBeat').addEventListener('change',()=>{renderTimeline();if($('snapBeat').checked&&!(S.music&&S.music.beat0!=null)&&!S.bpm.on)
+ $('cueMsg').innerHTML=badge('warn',`Прив'язка до долі за темпом ${S.bpm.val} BPM від початку шоу. Темп пісні можна визначити кнопкою «Визначити темп пісні» або Tap у вкладці «Чейзи».`)});
+/* позначення кроку під час прослуховування */
+function markCue(){if(PLAY)return;const t=snapT(curShowT()),end=S.showEnd;
+ if(t>=end){$('cueMsg').innerHTML=badge('warn','Цей момент — уже після кінця шоу. Збільште «Кінець шоу».');return}
+ if(S.show.some(c=>Math.abs(c.t-t)<0.05)){$('cueMsg').innerHTML=badge('warn',`На ${fmtT(t)} крок уже є.`);return}
+ const prev=S.show.filter(c=>c.t<=t).pop();
+ S.show.push({t,part:prev?prev.part:'Вступ',type:'scene',ref:null,note:''});S.show.sort((a,b)=>a.t-b.t);save();renderCues();
+ const i=S.show.findIndex(c=>c.t===t);
+ $('cueMsg').innerHTML=badge('ok',`Крок ${i+1} позначено на ${fmtT(t)}. Оберіть для нього сцену або чейз у таблиці.`)+'<br>'+$('cueMsg').innerHTML;
+ const row=document.querySelector(`#cueTbl select[data-ci="${i}"][data-f="ref"]`);if(row){row.closest('tr').style.background='#4a3f25';setTimeout(()=>{if(row.closest('tr'))row.closest('tr').style.background=''},1500)}}
+$('cueMark').addEventListener('click',markCue);
+
+/* ---------- повноекранний режим демонстрації ---------- */
+function fsOn(){return document.getElementById('stageBox').classList.contains('fs')}
+function fsSync(){const BOX=$('stageBox'),real=document.fullscreenElement===BOX||document.webkitFullscreenElement===BOX;
+ BOX.classList.toggle('fs',real||BOX.classList.contains('pseudo'));document.body.classList.toggle('fsmode',fsOn());updMini();updTransport();
+ if(!fsOn()&&G3)setTimeout(()=>{if(G3)G3.W=0},50)}
+function enterFS(){const BOX=$('stageBox'),req=BOX.requestFullscreen||BOX.webkitRequestFullscreen;
+ const pseudo=()=>{BOX.classList.add('pseudo');fsSync()};
+ if(!req){pseudo();return}
+ try{const p=req.call(BOX);if(p&&p.then)p.then(fsSync,pseudo);else setTimeout(()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement)pseudo();else fsSync()},250)}catch(e){pseudo()}}
+function exitFS(){const BOX=$('stageBox');if(BOX.classList.contains('pseudo')){BOX.classList.remove('pseudo');fsSync();return}
+ const ex=document.exitFullscreen||document.webkitExitFullscreen;if(ex)try{const p=ex.call(document);if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+document.addEventListener('fullscreenchange',fsSync);document.addEventListener('webkitfullscreenchange',fsSync);
+$('fsBtn').addEventListener('click',enterFS);$('shFs').addEventListener('click',enterFS);
+$('fsBar').addEventListener('click',e=>{const b=e.target.closest('[data-fs]');if(!b)return;const a=b.dataset.fs;b.blur();
+ if(a==='play')showPlay();if(a==='pause')showPause();if(a==='stop'){showStop();goMsg('','')}if(a==='go')showGo();if(a==='exit')exitFS()});
+
+/* ---------- інша програма на сцені: приклад або робота студента ---------- */
+function setPlay(ctx){audioPause();SH.playing=false;SH.pos=0;SH.idx=-1;stopChase();fades=[];FX.forEach(f=>{cur[f.id]=homeVals(f)});PLAY=ctx;
+ $('playBanner').classList.toggle('show',!!ctx);
+ if(ctx)$('playBannerTxt').textContent=ctx.kind==='demo'?'Відтворюється приклад шоу (його програму приховано).':`Відтворюється робота: ${ctx.who}.`;
+ const demo=!!ctx&&ctx.kind==='demo';document.querySelectorAll('input[name=pmode][value=go],input[name=fsmode][value=go]').forEach(r=>r.disabled=demo);if(demo)setMode('auto');
+ $('cueCard').style.opacity=ctx?'0.4':'1';$('cueCard').style.pointerEvents=ctx?'none':'';
+ renderTimeline();goMsg('','')}
+$('playBannerStop').addEventListener('click',()=>setPlay(null));
+function loadDemo(){return Object.assign(emptyProg(),JSON.parse(decodeURIComponent(escape(atob(DEMO_PKG.split('').reverse().join(''))))))}
+$('shDemo').addEventListener('click',()=>{setPlay({kind:'demo',prog:loadDemo()});setMode('auto');showPlay();$('stageView').scrollIntoView({behavior:'smooth',block:'start'})});
+
+/* ---------- автоматична перевірка ---------- */
+function hueBucket(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b);if(mx<30)return null;if(mx-mn<60)return 'w';const d=mx-mn;let h;
+ if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h=(h*60+360)%360;return 'h'+Math.round(h/30)%12}
+function sceneStrobe(sc){for(const f of FX){const v=sc.v[f.id];if(!v)continue;const ch=TYPES[f.t].ch,g=p=>v[ch.indexOf(p)];
+ if(f.t==='strobe'&&g('dim')>0&&g('rate')>0)return true;if((f.t==='spot'||f.t==='wash')&&g('dim')>0&&g('str')>10)return true}return false}
+function cueStrobe(P,c){if(c.type==='scene'){const s=sceneOf(P,c.ref);return !!s&&sceneStrobe(s)}
+ if(c.type==='chase'){const ch=chaseOf(P,c.ref);if(!ch)return false;return (ch.type==='run'?[ch.base]:ch.steps).some(n=>{const s=sceneOf(P,n);return s&&sceneStrobe(s)})}return false}
+function evaluate(P){const C=[];
+ const add=(name,subs)=>{const ok=subs.filter(s=>s.ok).length;C.push({name,subs,pts:ok===subs.length?1:ok>=subs.length/2?0.5:0})};
+ const errs=Object.values(patchOf(P).err);
+ add('Патч',[{ok:!errs.some(e=>e.startsWith('адресу')),t:'усім 12 приладам призначено стартові адреси'},{ok:!errs.some(e=>!e.startsWith('адресу')),t:'немає перекриття каналів, усі канали в межах 1–512'},{ok:!!P.term,t:'встановлено термінатор 120 Ом'}]);
+ const scs=P.scenes||[],hues=new Set(),pos=new Set(),types=new Set();
+ scs.forEach(s=>FX.forEach(f=>{const v=s.v[f.id];if(!v)return;const ch=TYPES[f.t].ch,g=p=>v[ch.indexOf(p)];if(g('dim')<=20)return;
+  if(f.t==='strobe'){if(g('rate')>0)types.add('strobe');return}if(f.t==='fresnel'){types.add('fresnel');return}
+  const w=g('w'),hb=hueBucket(clamp(g('r')+w,0,255),clamp(g('g')+w,0,255),clamp(g('b')+w,0,255));if(!hb)return;
+  types.add(f.t);hues.add(hb);if(f.t==='spot')pos.add(Math.round(g('pan')/20)+'/'+Math.round(g('tilt')/20))}));
+ const faded=scs.filter(s=>s.up>0||s.down>0).length;
+ add('Сцени',[{ok:scs.length>=6,t:`щонайменше 6 сцен (записано ${scs.length})`},{ok:scs.length>0&&faded>=scs.length/2,t:`щонайменше половина сцен має час переходу більше 0 (${faded} з ${scs.length})`},
+  {ok:hues.size>=3,t:`використано щонайменше 3 різні кольори (${hues.size})`},{ok:pos.size>=3,t:`рухомі голови мають щонайменше 3 різні положення Pan/Tilt (${pos.size})`},{ok:types.size===4,t:`задіяно всі 4 типи приладів (${types.size} з 4)`}]);
+ const chs=P.chases||[],valid=chs.filter(c=>!chaseProblem(c,P));
+ const sig=new Set(valid.map(c=>[c.dir,c.x,c.type,P.bpm&&P.bpm.on?c.beats:c.time].join('|')));
+ add('Чейзи',[{ok:chs.length>=2,t:`щонайменше 2 чейзи (записано ${chs.length})`},{ok:chs.length>0&&valid.length===chs.length,t:'усі чейзи мають щонайменше 2 коректні кроки'},{ok:sig.size>=2,t:'чейзи відрізняються параметрами (напрямок, перехід, тип або час кроку)'}]);
+ const sh=P.show||[],end=showEndOf(P),pr=cueProblems(P);
+ add('Шоу',[{ok:end>=50,t:`тривалість щонайменше 0:50 (${fmtT(end)})`},{ok:sh.length>=8,t:`щонайменше 8 кроків (${sh.length})`},
+  {ok:sh.some(c=>c.type==='scene')&&sh.some(c=>c.type==='chase'),t:'містить і сцени, і чейзи'},{ok:sh.length>0&&!pr.length,t:pr.length?'помилки в cue list: '+pr.slice(0,3).join('; ')+(pr.length>3?'…':''):'cue list без помилок'}]);
+ const scCues=sh.filter(c=>c.type==='scene'&&sceneOf(P,c.ref)),smooth=scCues.filter(c=>{const s=sceneOf(P,c.ref);return s.up>0||s.down>0}).length;
+ let strobeT=0;sh.forEach((c,i)=>{const t1=i+1<sh.length?sh[i+1].t:end;if(c.t<end&&cueStrobe(P,c))strobeT+=Math.min(t1,end)-c.t});const share=strobeT/end;
+ const last=sh[sh.length-1],lastSc=last&&last.type==='scene'?sceneOf(P,last.ref):null;
+ const lastDark=!!last&&(last.type==='black'||(!!lastSc&&FX.every(f=>!lastSc.v[f.id]||lastSc.v[f.id][TYPES[f.t].ch.indexOf('dim')]===0)));
+ add('Якість',[{ok:scCues.length>0&&smooth>=scCues.length/2,t:`плавні переходи: щонайменше половина сцен у шоу мають fade більше 0 (${smooth} з ${scCues.length})`},
+  {ok:share>0&&share<=0.35,t:`стробоскоп використано доречно: є, але не більше 35 % часу шоу (зараз ${Math.round(share*100)} %)`},{ok:lastDark,t:'шоу завершується затемненням (Blackout)'}]);
+ const sum=C.reduce((a,c)=>a+c.pts,0);return {C,sum,grade:Math.max(2,Math.round(sum))}}
+function evalHTML(ev){let h='<table class="crit">';
+ ev.C.forEach((c,k)=>{h+=`<tr><th colspan="2" style="color:var(--text);font-size:14px">${k+1}. ${c.name}</th><th style="text-align:right;color:var(--text)">${String(c.pts).replace('.',',')} з 1</th></tr>`;
+  c.subs.forEach(s=>h+=`<tr><td class="${s.ok?'ok':'bad'}">${s.ok?'✓':'✗'}</td><td colspan="2">${esc(s.t)}</td></tr>`)});
+ return h+`</table><div style="margin-top:10px">Сума балів: <b>${String(ev.sum).replace('.',',')} з 5</b> → орієнтовна оцінка <span class="grade ${ev.grade>=4?'ok':ev.grade===3?'warn':'bad'}">${ev.grade}</span></div>
+ <div class="note">1 бал за критерій — виконано всі пункти; 0,5 бала — щонайменше половину. Оцінка — сума балів з округленням, але не менше 2. Остаточну оцінку виставляє викладач.</div>`}
+function renderSelfCheck(){const ev=evaluate(S),open=$('selfCheck').querySelector('details[open]')?'open':'';
+ $('selfCheck').innerHTML=`<details ${open}><summary style="cursor:pointer">Орієнтовна оцінка: <span class="grade ${ev.grade>=4?'ok':ev.grade===3?'warn':'bad'}">${ev.grade}</span> (сума балів ${String(ev.sum).replace('.',',')} з 5) — розгорнути, щоб побачити, що виконано</summary>${evalHTML(ev)}</details>`}
+
+/* ---------- код програми: створення і читання ---------- */
+function fnv(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')}
+function u8ToB64(u){let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function b64ToU8(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+async function pipeBytes(u8,stream){return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(stream)).arrayBuffer())}
+async function encodeProg(){const st=S.student;
+ const data={app:'dmx-praktychna',v:2,student:{last:st.last.trim(),first:st.first.trim(),group:st.group.trim()},created:new Date().toISOString(),addr:S.addr,term:S.term,scenes:S.scenes,chases:S.chases,show:S.show,showEnd:S.showEnd,bpm:S.bpm,music:S.music?{name:S.music.name,dur:S.music.dur,start:S.music.start,beat0:S.music.beat0==null?null:S.music.beat0}:null};
+ const json=JSON.stringify(data),u=new TextEncoder().encode(json);let ver='DMX0',body=u;
+ if(typeof CompressionStream!=='undefined'){try{body=await pipeBytes(u,new CompressionStream('deflate-raw'));ver='DMX1'}catch(e){body=u;ver='DMX0'}}
+ return `${ver}:${u8ToB64(body)}:${fnv(json)}`}
+async function decodeProg(code){code=code.replace(/\s+/g,'');const m=code.match(/^(DMX[01]):([A-Za-z0-9+/=]+):([0-9a-f]{8})$/);
+ if(!m)throw new Error('Код має неправильний формат. Скопіюйте його повністю — від «DMX» до кінця.');
+ let u=b64ToU8(m[2]);
+ if(m[1]==='DMX1'){let ds=null;try{ds=new DecompressionStream('deflate-raw')}catch(e){}
+  if(!ds)throw new Error('Цей браузер не вміє розпаковувати код. Оновіть Chrome до версії 103 або новішої (або відкрийте файл у Edge чи Firefox).');u=await pipeBytes(u,ds)}
+ const json=new TextDecoder().decode(u),d=JSON.parse(json);if(d.app!=='dmx-praktychna')throw new Error('Це не код цієї практичної роботи.');
+ return {d,ok:fnv(json)===m[3]}}
+function codeMsg(t,cls){$('codeMsg').innerHTML=t?badge(cls,t):''}
+function chkMsg(t,cls){$('chkMsg').innerHTML=t?badge(cls,t):''}
+$('genCode').addEventListener('click',async()=>{const st=S.student;
+ if(!st.last.trim()||!st.first.trim()||!st.group.trim()){codeMsg('Заповніть прізвище, ім\'я та групу у верхній частині сторінки.','bad');window.scrollTo({top:0,behavior:'smooth'});return}
+ $('codeOut').value=await encodeProg();renderSelfCheck();
+ codeMsg(`Код згенеровано ${new Date().toLocaleString('uk-UA')}. Скопіюйте його або збережіть у файл і надішліть викладачу.`,'ok')});
+$('copyCode').addEventListener('click',async()=>{const t=$('codeOut').value;if(!t){codeMsg('Спершу згенеруйте код.','bad');return}
+ try{await navigator.clipboard.writeText(t)}catch(e){$('codeOut').select();document.execCommand('copy')}codeMsg('Код скопійовано в буфер обміну.','ok')});
+$('saveCode').addEventListener('click',()=>{const t=$('codeOut').value;if(!t){codeMsg('Спершу згенеруйте код.','bad');return}const st=S.student;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.download=`${st.last}_${st.first}_${st.group}_svitlove_shou.txt`.replace(/[\\/:*?"<>|\s]+/g,'_');
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)});
+function progSummary(P){
+ const sc=P.scenes.map(s=>`<tr><td>${s.n}</td><td>${esc(s.name)}</td><td>fade ${s.up} / ${s.down} с</td></tr>`).join('');
+ const ch=P.chases.map(c=>`<tr><td>${c.n}</td><td>${esc(c.name)}</td><td>${c.type==='run'?'біг по приладах: '+esc((c.fx||[]).join(' → '))+' (база — сцена '+c.base+')':'сцени: '+esc((c.steps||[]).join(' → '))}</td><td>${DIRN[c.dir]||''}, ${XN[c.x]||''}, ${P.bpm&&P.bpm.on?c.beats+' уд.':c.time+' с'}</td></tr>`).join('');
+ const cu=P.show.map((c,i)=>`<tr><td>${i+1}</td><td>${fmtT(c.t)}</td><td>${esc(c.part)}</td><td>${esc(cueLabel(P,c))}</td><td>${esc(c.note||'')}</td></tr>`).join('');
+ const none='<tr><td class="note">немає</td></tr>';
+ return `<details style="margin-top:14px"><summary style="cursor:pointer">Програма студента: ${P.scenes.length} сцен, ${P.chases.length} чейзів, ${P.show.length} кроків шоу${P.bpm&&P.bpm.on?', BPM '+P.bpm.val:''}</summary>
+ <h3>Сцени</h3><table>${sc||none}</table><h3>Чейзи</h3><table>${ch||none}</table>${P.music?`<p class="note">Студент програмував шоу під пісню «${esc(P.music.name)}»${P.music.start?' (фрагмент з '+fmtT(P.music.start)+')':''}. Для перевірки пісня не потрібна.</p>`:''}<h3>Cue list (кінець шоу ${fmtT(showEndOf(P))})</h3><table>${cu||none}</table></details>`}
+let CHK=null;
+async function checkCode(){const code=$('codeIn').value;if(!code.trim()){chkMsg('Вставте код студента або відкрийте файл.','bad');return}
+ try{const {d,ok}=await decodeProg(code);const P=Object.assign(emptyProg(),d);CHK=P;const st=P.student||{};
+  const when=d.created?new Date(d.created).toLocaleString('uk-UA'):'—';
+  $('chkOut').innerHTML=`<div class="card" style="background:var(--panel2)"><div style="font-size:17px"><b>${esc(st.last||'?')} ${esc(st.first||'')}</b>, група ${esc(st.group||'?')}</div>
+   <div class="note">Код створено: ${esc(when)} · контрольна сума: ${ok?badge('ok','збігається'):badge('bad','не збігається — код пошкоджено або змінено вручну')}</div></div>`+evalHTML(evaluate(P))+progSummary(P);
+  chkMsg('','');$('playStudent').disabled=false;$('loadEditor').disabled=false}
+ catch(e){CHK=null;$('chkOut').innerHTML='';$('playStudent').disabled=true;$('loadEditor').disabled=true;
+  chkMsg(e&&/[а-яії]/i.test(e.message||'')?e.message:'Не вдалося прочитати код: він неповний або пошкоджений.','bad')}}
+$('chkCode').addEventListener('click',checkCode);
+$('codeIn').addEventListener('input',()=>chkMsg('',''));
+$('codeFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('codeIn').value=r.result;checkCode()};r.readAsText(f);e.target.value=''});
+$('playStudent').addEventListener('click',()=>{if(!CHK)return;const st=CHK.student||{};
+ setPlay({kind:'teacher',prog:CHK,who:`${st.last||''} ${st.first||''}, група ${st.group||''}`});document.querySelector('#tabs [data-t=show]').click();setMode('auto');showPlay();$('stageView').scrollIntoView({behavior:'smooth',block:'start'})});
+function refreshAll(){[['stLast','last'],['stFirst','first'],['stGroup','group']].forEach(([id,k])=>{const el=$(id);el.value=S.student[k]||'';el.classList.toggle('bad',!el.value.trim())});
+ FX.forEach(f=>{document.querySelector(`input[data-addr="${f.id}"]`).value=S.addr[f.id]==null?'':S.addr[f.id]});
+ renderPatch();renderChips();renderProg();renderScenes();$('scNum').value=nextNum();newChase();renderCues();renderSelfCheck();renderMusic()}
+$('loadEditor').addEventListener('click',e=>{if(!CHK)return;if(!armed(e.currentTarget,'Замінити мою роботу? Натисніть ще раз'))return;setPlay(null);
+ const keep=S.student;S=Object.assign(emptyProg(),JSON.parse(JSON.stringify(CHK)));['app','v','created'].forEach(k=>delete S[k]);if(!S.student||!S.student.last)S.student=keep;
+ save();refreshAll();chkMsg('Програму завантажено в редактор.','ok')});
+$('btnWipe').addEventListener('click',e=>{if(!armed(e.currentTarget,'Точно все видалити? Натисніть ще раз'))return;
+ setPlay(null);showStop();unloadAudio(false);S=emptyProg();save();refreshAll();
+ ['scName','chName','codeOut','codeIn'].forEach(id=>{$(id).value=''});['recMsg','chMsg','codeMsg','chkMsg','goMsg'].forEach(id=>{$(id).innerHTML=''});$('chkOut').innerHTML='';
+ $('playStudent').disabled=true;$('loadEditor').disabled=true;CHK=null;sel=new Set(['S1','S2','S3','S4']);renderChips();renderProg();
+ $('scUp').value=1;$('scDown').value=1;window.scrollTo({top:0,behavior:'smooth'});$('stLast').focus()});
+$('resetAll').addEventListener('click',e=>{if(!armed(e.currentTarget,'Точно очистити все? Натисніть ще раз'))return;setPlay(null);
+ const st=S.student;S=emptyProg();S.student=st;save();refreshAll();codeMsg('','');$('codeOut').value=''});
+
+/* ================= 3D-сцена: власний мінімальний рушій WebGL (без сторонніх бібліотек) ================= */
+let VIEW='3d',G3=null,G3fail=false;
+const HAS_AR=!!(window.CSS&&CSS.supports&&CSS.supports('aspect-ratio','1 / 1'));
+const DEG=Math.PI/180;
+const V3={sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],mul:(a,s)=>[a[0]*s,a[1]*s,a[2]*s],
+ dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+ norm:a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l]}};
+function m4(){const o=new Float32Array(16);o[0]=o[5]=o[10]=o[15]=1;return o}
+function mMul(a,b){const o=new Float32Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+j]*b[i*4+k];o[i*4+j]=s}return o}
+function mChain(...ms){return ms.reduce((a,b)=>mMul(a,b))}
+function mT(x,y,z){const o=m4();o[12]=x;o[13]=y;o[14]=z;return o}
+function mRX(a){const o=m4(),c=Math.cos(a),s=Math.sin(a);o[5]=c;o[6]=s;o[9]=-s;o[10]=c;return o}
+function mRY(a){const o=m4(),c=Math.cos(a),s=Math.sin(a);o[0]=c;o[2]=-s;o[8]=s;o[10]=c;return o}
+function mRZ(a){const o=m4(),c=Math.cos(a),s=Math.sin(a);o[0]=c;o[1]=s;o[4]=-s;o[5]=c;return o}
+function mAlignY(d){const y=V3.norm(d),ref=Math.abs(y[1])>0.95?[1,0,0]:[0,1,0];const x=V3.norm(V3.cross(ref,y)),z=V3.cross(x,y);const o=m4();o.set([x[0],x[1],x[2],0,y[0],y[1],y[2],0,z[0],z[1],z[2],0],0);return o}
+function mPersp(fov,asp,n,f){const t=1/Math.tan(fov/2),o=new Float32Array(16);o[0]=t/asp;o[5]=t;o[10]=(f+n)/(n-f);o[11]=-1;o[14]=2*f*n/(n-f);return o}
+function mLook(e,c,u){const z=V3.norm(V3.sub(e,c)),x=V3.norm(V3.cross(u,z)),y=V3.cross(z,x);
+ return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-V3.dot(x,e),-V3.dot(y,e),-V3.dot(z,e),1])}
+function mApply(M,p){return [M[0]*p[0]+M[4]*p[1]+M[8]*p[2]+M[12],M[1]*p[0]+M[5]*p[1]+M[9]*p[2]+M[13],M[2]*p[0]+M[6]*p[1]+M[10]*p[2]+M[14]]}
+
+/* --- примітиви: масив [x,y,z,nx,ny,nz] на вершину, трикутники --- */
+function pBox(sx,sy,sz){const x=sx/2,y=sy/2,z=sz/2,o=[];
+ const F=(n,a,b,c,d)=>{[a,b,c,a,c,d].forEach(p=>o.push(p[0],p[1],p[2],n[0],n[1],n[2]))};
+ F([1,0,0],[x,-y,-z],[x,y,-z],[x,y,z],[x,-y,z]);F([-1,0,0],[-x,-y,z],[-x,y,z],[-x,y,-z],[-x,-y,-z]);
+ F([0,1,0],[-x,y,-z],[-x,y,z],[x,y,z],[x,y,-z]);F([0,-1,0],[-x,-y,z],[-x,-y,-z],[x,-y,-z],[x,-y,z]);
+ F([0,0,1],[-x,-y,z],[x,-y,z],[x,y,z],[-x,y,z]);F([0,0,-1],[x,-y,-z],[-x,-y,-z],[-x,y,-z],[x,y,-z]);return o}
+function pCyl(r,h,seg,caps){seg=seg||16;if(caps===undefined)caps=true;const o=[],y=h/2;
+ for(let i=0;i<seg;i++){const a0=i/seg*2*Math.PI,a1=(i+1)/seg*2*Math.PI,c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+  const P=(c,s,yy,n)=>o.push(r*c,yy,r*s,n[0],n[1],n[2]);
+  P(c0,s0,-y,[c0,0,s0]);P(c1,s1,-y,[c1,0,s1]);P(c1,s1,y,[c1,0,s1]);P(c0,s0,-y,[c0,0,s0]);P(c1,s1,y,[c1,0,s1]);P(c0,s0,y,[c0,0,s0]);
+  if(caps){o.push(0,y,0,0,1,0);P(c1,s1,y,[0,1,0]);P(c0,s0,y,[0,1,0]);o.push(0,-y,0,0,-1,0);P(c0,s0,-y,[0,-1,0]);P(c1,s1,-y,[0,-1,0])}}return o}
+function pSph(r,seg){seg=seg||10;const o=[];const v=(a,b)=>{const t=a/seg*Math.PI,p=b/(seg*2)*2*Math.PI;return [Math.sin(t)*Math.cos(p),Math.cos(t),Math.sin(t)*Math.sin(p)]};
+ for(let i=0;i<seg;i++)for(let j=0;j<seg*2;j++){[v(i,j),v(i+1,j),v(i+1,j+1),v(i,j),v(i+1,j+1),v(i,j+1)].forEach(n=>o.push(n[0]*r,n[1]*r,n[2]*r,n[0],n[1],n[2]))}return o}
+function bake(arr,M){const o=new Array(arr.length);for(let i=0;i<arr.length;i+=6){const x=arr[i],y=arr[i+1],z=arr[i+2],a=arr[i+3],b=arr[i+4],c=arr[i+5];
+ o[i]=M[0]*x+M[4]*y+M[8]*z+M[12];o[i+1]=M[1]*x+M[5]*y+M[9]*z+M[13];o[i+2]=M[2]*x+M[6]*y+M[10]*z+M[14];
+ o[i+3]=M[0]*a+M[4]*b+M[8]*c;o[i+4]=M[1]*a+M[5]*b+M[9]*c;o[i+5]=M[2]*a+M[6]*b+M[10]*c}return o}
+function pCap(r,len,seg){return pCyl(r,len,seg||12,false).concat(bake(pSph(r,7),mT(0,len/2,0)),bake(pSph(r,7),mT(0,-len/2,0)))}
+
+/* --- шейдери --- */
+const SH_LIT_V=`attribute vec3 aP;attribute vec3 aN;uniform mat4 uM;uniform mat4 uVP;varying vec3 vP;varying vec3 vN;
+void main(){vec4 w=uM*vec4(aP,1.0);vP=w.xyz;vN=(uM*vec4(aN,0.0)).xyz;gl_Position=uVP*w;}`;
+const SH_LIT_F=`#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+#define NS 12
+uniform vec3 uSP[NS];uniform vec3 uSD[NS];uniform vec3 uSC[NS];uniform vec4 uSX[NS];
+uniform vec3 uPP[2];uniform vec3 uPC[2];uniform vec3 uCol;uniform vec3 uEmis;uniform vec3 uAmb;
+varying vec3 vP;varying vec3 vN;
+float gobo(float g,vec2 q){
+ if(g<0.5)return 1.0;
+ if(g<1.5){float m=1.0-smoothstep(0.17,0.23,length(q));
+  m=max(m,1.0-smoothstep(0.17,0.23,length(q-vec2(0.5,0.35))));m=max(m,1.0-smoothstep(0.17,0.23,length(q-vec2(-0.5,0.35))));
+  m=max(m,1.0-smoothstep(0.17,0.23,length(q-vec2(0.5,-0.35))));m=max(m,1.0-smoothstep(0.17,0.23,length(q-vec2(-0.5,-0.35))));return m;}
+ if(g<2.5){float r=length(q);return smoothstep(0.42,0.5,r)*(1.0-smoothstep(0.8,0.88,r));}
+ float d=min(min(abs(q.x+0.55),abs(q.x)),abs(q.x-0.55));return 1.0-smoothstep(0.1,0.14,d);}
+void main(){vec3 N=normalize(vN);vec3 acc=uAmb;
+ for(int i=0;i<NS;i++){vec3 Ls=uSP[i]-vP;float d=length(Ls);vec3 l=Ls/d;
+  float cone=smoothstep(uSX[i].x,uSX[i].y,dot(-l,uSD[i]));float diff=max(dot(N,l),0.0);
+  if(cone*diff<=0.0)continue;
+  vec3 ax=uSD[i];vec3 rf=abs(ax.y)>0.9?vec3(1.0,0.0,0.0):vec3(0.0,1.0,0.0);vec3 u=normalize(cross(ax,rf));vec3 v=cross(ax,u);
+  vec3 r=-Ls;float z=max(dot(r,ax),0.001);vec2 q=vec2(dot(r,u),dot(r,v))/(z*uSX[i].w);
+  acc+=uSC[i]*cone*diff*gobo(uSX[i].z,q)/(1.0+0.03*d*d);}
+ for(int i=0;i<2;i++){vec3 Lp=uPP[i]-vP;float d=length(Lp);acc+=uPC[i]*max(dot(N,Lp/d),0.0)/(1.0+0.04*d*d);}
+ vec3 c=uCol*acc+uEmis;c=vec3(1.0)-exp(-c*1.3);gl_FragColor=vec4(c,1.0);}`;
+const SH_BEAM_V=`attribute vec3 aB;uniform vec3 uA;uniform vec3 uD;uniform vec3 uU;uniform vec3 uV;uniform float uL;uniform float uR0;uniform float uR1;uniform mat4 uVP;
+varying float vT;varying vec3 vN;varying vec3 vW;
+void main(){float r=mix(uR0,uR1,aB.z);vec3 rad=uU*aB.x+uV*aB.y;vec3 w=uA+uD*uL*aB.z+rad*r;
+ vN=normalize(rad-uD*(uR1-uR0)/uL);vT=aB.z;vW=w;gl_Position=uVP*vec4(w,1.0);}`;
+const SH_BEAM_F=`precision mediump float;uniform vec3 uC;uniform vec3 uEye;uniform float uI;varying float vT;varying vec3 vN;varying vec3 vW;
+void main(){vec3 V=normalize(uEye-vW);float f=abs(dot(normalize(vN),V));
+ float a=uI*pow(f,1.6)*(1.0-0.8*vT)*smoothstep(0.0,0.03,vT);gl_FragColor=vec4(uC*a,1.0);}`;
+const SH_GLOW_V=`attribute vec2 aQ;uniform vec3 uC0;uniform vec3 uRt;uniform vec3 uUp;uniform float uS;uniform mat4 uVP;varying vec2 vQ;
+void main(){vQ=aQ;vec3 w=uC0+(uRt*aQ.x+uUp*aQ.y)*uS;gl_Position=uVP*vec4(w,1.0);}`;
+const SH_GLOW_F=`precision mediump float;uniform vec3 uC;uniform float uI;varying vec2 vQ;
+void main(){float r=length(vQ);float a=uI*pow(max(1.0-r,0.0),2.4);gl_FragColor=vec4(uC*a,1.0);}`;
+
+function glProg(gl,vs,fs,attrs,unis){const mk=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s};
+ const p=gl.createProgram();gl.attachShader(p,mk(gl.VERTEX_SHADER,vs));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));
+ attrs.forEach((a,i)=>gl.bindAttribLocation(p,i,a));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+ const u={};unis.forEach(n=>u[n]=gl.getUniformLocation(p,n));return {p,u}}
+
+/* --- розміщення приладів у просторі (метри; Y — вгору, глядачі з боку +Z) --- */
+const X3=x=>(x-500)*0.012;
+const POS3={};
+FX.forEach(f=>{const x=X3(f.x);
+ if(f.t==='spot')POS3[f.id]={hang:[x,6.1,0]};
+ if(f.t==='wash'){const p=[x,0.36,-3.75],aim=[x,5.2,-4.5];POS3[f.id]={p,d:V3.norm(V3.sub(aim,p))}}
+ if(f.t==='fresnel'){const p=[x,5.9,9],aim=[x*0.45,1.0,0.8];POS3[f.id]={p,d:V3.norm(V3.sub(aim,p))}}
+ if(f.t==='strobe')POS3[f.id]={p:[x,5.95,0.45]}});
+function spotAngles(pan,tilt){return {th:(110-tilt/255*140)*DEG,ph:-(pan-128)/128*100*DEG}}
+function dirFrom(th,ph){return [-Math.sin(th)*Math.sin(ph),-Math.cos(th),-Math.sin(th)*Math.cos(ph)]}
+function beamLen(p,d,cap){let t=cap||40;
+ if(d[1]<-1e-4){let tf=p[1]/(-d[1]);const z=p[2]+d[2]*tf,x=p[0]+d[0]*tf;if(z>4.1||Math.abs(x)>6.2)tf=(p[1]+1)/(-d[1]);t=Math.min(t,tf)}
+ if(d[2]<-1e-4){const tw=(p[2]+4.5)/(-d[2]);if(p[1]+d[1]*tw<8.5)t=Math.min(t,tw)}
+ if(d[1]>1e-4)t=Math.min(t,(9.5-p[1])/d[1]);return Math.max(0.3,t)}
+
+/* --- побудова сцени --- */
+function buildScene(gl){
+ const groups={},dyn={};
+ const add=(arr,col)=>{const k=col.join(',');(groups[k]=groups[k]||{col,a:[]}).a.push(...arr)};
+ const mesh=(arr,col)=>{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(arr),gl.STATIC_DRAW);
+  return {b,n:arr.length/6,col,em:[0,0,0],M:m4()}};
+ const C={deck:[0.24,0.24,0.26],front:[0.08,0.08,0.09],ground:[0.07,0.07,0.08],wall:[0.62,0.62,0.66],truss:[0.62,0.63,0.67],
+  body:[0.1,0.1,0.11],dark:[0.05,0.05,0.06],riser:[0.13,0.13,0.14],amp:[0.07,0.07,0.075],person:[0.55,0.53,0.5],
+  guitar:[0.5,0.13,0.1],brass:[0.6,0.46,0.18],drum:[0.45,0.45,0.48],stand:[0.3,0.3,0.32]};
+ // сцена, підлога залу, задник (циклорама)
+ add(bake(pBox(12.6,1,8.6),mT(0,-0.5,-0.2)),C.deck);
+ add(bake(pBox(12.6,1,0.05),mT(0,-0.5,4.12)),C.front);
+ add(bake(pBox(44,0.1,34),mT(0,-1.05,14)),C.ground);
+ add(bake(pBox(16,9,0.2),mT(0,4,-4.6)),C.wall);
+ // ферма (truss) і дві вежі
+ [6.2,6.6].forEach(y=>[-0.22,0.22].forEach(z=>add(bake(pBox(13.8,0.06,0.06),mT(0,y,z)),C.truss)));
+ for(let i=0;i<=23;i++){const x=-6.9+i*0.6;
+  [-0.22,0.22].forEach(z=>add(bake(pBox(0.035,0.4,0.035),mT(x,6.4,z)),C.truss));
+  add(bake(pBox(0.035,0.035,0.44),mT(x,6.2,0)),C.truss);add(bake(pBox(0.035,0.035,0.44),mT(x,6.6,0)),C.truss);
+  if(i<23)[-0.22,0.22].forEach(z=>add(bake(pBox(0.03,0.72,0.03),mChain(mT(x+0.3,6.4,z),mRZ((i%2?1:-1)*56.3*DEG))),C.truss))}
+ [-6.95,6.95].forEach(x=>{[-0.2,0.2].forEach(dx=>[-0.2,0.2].forEach(dz=>add(bake(pBox(0.05,6.8,0.05),mT(x+dx,3.4,dz)),C.truss)));
+  for(let y=0.3;y<6.8;y+=0.6){add(bake(pBox(0.44,0.03,0.03),mT(x,y,-0.2)),C.truss);add(bake(pBox(0.44,0.03,0.03),mT(x,y,0.2)),C.truss);
+   add(bake(pBox(0.03,0.03,0.44),mT(x-0.2,y,0)),C.truss);add(bake(pBox(0.03,0.03,0.44),mT(x+0.2,y,0)),C.truss)}
+  add(bake(pBox(0.8,0.06,0.8),mT(x,0.03,0)),C.dark)});
+ // штанга фронтального світла (FOH)
+ add(bake(pBox(7.5,0.06,0.06),mT(0,6.25,9)),C.truss);
+ // музиканти: подіум, підсилювачі, барабанщик з установкою, два гітаристи і вокаліст
+ add(bake(pBox(2.8,0.35,1.9),mT(0,0.175,-2.75)),C.riser);
+ [-2.4,2.4].forEach(x=>{add(bake(pBox(0.9,1.0,0.45),mT(x,0.5,-3.6)),C.amp);add(bake(pCyl(0.22,0.02,16),mChain(mT(x,0.5,-3.37),mRX(Math.PI/2))),C.stand)});
+ const person=(x,y,z,seated)=>{
+  if(!seated){add(bake(pCap(0.085,0.72),mT(x-0.1,y+0.45,z)),C.person);add(bake(pCap(0.085,0.72),mT(x+0.1,y+0.45,z)),C.person)}
+  const ty=seated?y+0.95:y+1.22;
+  add(bake(pCap(0.2,0.42),mT(x,ty,z)),C.person);add(bake(pSph(0.14,10),mT(x,ty+0.48,z)),C.person);
+  add(bake(pCap(0.055,0.5),mChain(mT(x-0.28,ty-0.08,z+0.05),mRZ(-0.18),mRX(seated?-0.9:-0.25))),C.person);
+  add(bake(pCap(0.055,0.5),mChain(mT(x+0.28,ty-0.08,z+0.05),mRZ(0.18),mRX(seated?-0.9:-0.25))),C.person)};
+ const guitar=(x,z)=>{const G=mChain(mT(x+0.02,1.08,z+0.22),mRZ(-0.42));
+  add(bake(pBox(0.44,0.32,0.09),mChain(G,mT(0.12,0,0))),C.guitar);add(bake(pBox(0.62,0.05,0.04),mChain(G,mT(-0.4,0,0))),C.stand);
+  add(bake(pBox(0.13,0.08,0.04),mChain(G,mT(-0.76,0,0))),C.stand)};
+ person(-2.76,0,0.6);guitar(-2.76,0.6);person(2.88,0,0.6);guitar(2.88,0.6);
+ person(-0.6,0,1.2);add(bake(pCyl(0.015,1.55,8),mT(-0.6,0.78,1.62)),C.stand);add(bake(pCyl(0.15,0.02,16),mT(-0.6,0.01,1.62)),C.stand);
+ add(bake(pCyl(0.03,0.13,8),mChain(mT(-0.6,1.6,1.56),mRX(0.7))),C.dark);
+ // барабанщик (сидить на подіумі)
+ add(bake(pCyl(0.17,0.5,12),mT(0,0.6,-3.15)),C.dark);person(0,0.35,-3.1,true);
+ add(bake(pCyl(0.32,0.38,20),mChain(mT(0,0.69,-2.45),mRX(Math.PI/2))),C.drum);
+ add(bake(pCyl(0.17,0.14,16),mT(-0.42,1.0,-2.6)),C.drum);add(bake(pCyl(0.14,0.16,16),mChain(mT(0.22,1.22,-2.42),mRX(0.3))),C.drum);
+ add(bake(pCyl(0.19,0.3,16),mT(0.55,0.8,-2.75)),C.drum);
+ [[-0.68,1.6,-2.4,0.2],[0.78,1.55,-2.55,-0.2],[-0.78,1.2,-2.78,0]].forEach(([x,y,z,a])=>{add(bake(pCyl(0.24,0.012,20),mChain(mT(x,y,z),mRZ(a))),C.brass);
+  add(bake(pCyl(0.012,y-0.35,6),mT(x,0.35+(y-0.35)/2,z)),C.stand)});
+ // прилади: нерухомі частини і динамічні (голови, лінзи, панелі)
+ FX.forEach(f=>{const P=POS3[f.id];
+  if(f.t==='spot'){const [x,y,z]=P.hang;add(bake(pBox(0.12,0.1,0.5),mT(x,y+0.08,z)),C.dark);
+   dyn[f.id]={yoke:mesh(bake(pBox(0.44,0.06,0.22),mT(0,-0.03,0)).concat(bake(pBox(0.05,0.44,0.16),mT(-0.22,-0.25,0)),bake(pBox(0.05,0.44,0.16),mT(0.22,-0.25,0))),C.body),
+    head:mesh(bake(pCyl(0.15,0.4,18),mT(0,-0.05,0)).concat(bake(pBox(0.26,0.12,0.26),mT(0,0.17,0))),C.body),
+    lens:mesh(bake(pCyl(0.12,0.02,18),mT(0,-0.26,0)),C.dark)}}
+  if(f.t==='wash'){const A=mChain(mT(...P.p),mAlignY(P.d));add(bake(pBox(0.42,0.08,0.3),mT(P.p[0],0.04,P.p[2])),C.body);
+   add(bake(pCyl(0.18,0.3,18),A),C.body);dyn[f.id]={lens:mesh(bake(pCyl(0.15,0.02,18),mChain(A,mT(0,0.16,0))),C.dark)}}
+  if(f.t==='fresnel'){const A=mChain(mT(...P.p),mAlignY(P.d));add(bake(pBox(0.32,0.5,0.32),A),C.body);
+   add(bake(pBox(0.05,0.35,0.05),mT(P.p[0],P.p[1]+0.2,P.p[2])),C.dark);dyn[f.id]={lens:mesh(bake(pCyl(0.13,0.02,18),mChain(A,mT(0,0.26,0))),C.dark)}}
+  if(f.t==='strobe'){const [x,y,z]=P.p;add(bake(pBox(0.8,0.3,0.24),mT(x,y,z)),C.body);add(bake(pBox(0.08,0.25,0.08),mT(x,y+0.25,z-0.1)),C.dark);
+   dyn[f.id]={lens:mesh(bake(pBox(0.68,0.2,0.02),mT(x,y,z+0.125)),C.dark)}}});
+ const stat=Object.values(groups).map(g=>mesh(g.a,g.col));
+ // конус променя (одиничний): x=cos, y=sin, z=t
+ const cone=[];const SEG=40;for(let i=0;i<SEG;i++){const a0=i/SEG*2*Math.PI,a1=(i+1)/SEG*2*Math.PI,c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+  cone.push(c0,s0,0,c1,s1,0,c1,s1,1,c0,s0,0,c1,s1,1,c0,s0,1)}
+ const coneB=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,coneB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(cone),gl.STATIC_DRAW);
+ const quadB=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,quadB);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,1,1,-1,-1,1,1,-1,1]),gl.STATIC_DRAW);
+ return {stat,dyn,coneB,coneN:cone.length/3,quadB}}
+
+/* --- камера --- */
+const CAMS={hall:{yaw:0,pitch:0.1,dist:14.5,ty:2.3},side:{yaw:0.95,pitch:0.2,dist:14,ty:2.4},top:{yaw:0,pitch:1.15,dist:15,ty:1.2},near:{yaw:-0.35,pitch:0.08,dist:8.5,ty:2.0}};
+const CAM={yaw:0,pitch:0.1,dist:14.5,ty:2.3},CAMG=Object.assign({},CAM);
+function camPreset(k){Object.assign(CAMG,CAMS[k])}
+
+function init3D(){if(G3)return true;if(G3fail)return false;
+ const cv=$('s3');let gl=null;
+ try{gl=cv.getContext('webgl',{antialias:true,alpha:false})||cv.getContext('experimental-webgl')}catch(e){}
+ if(!gl){G3fail=true;return false}
+ try{
+  const lit=glProg(gl,SH_LIT_V,SH_LIT_F,['aP','aN'],['uM','uVP','uSP','uSD','uSC','uSX','uPP','uPC','uCol','uEmis','uAmb']);
+  const beam=glProg(gl,SH_BEAM_V,SH_BEAM_F,['aB'],['uA','uD','uU','uV','uL','uR0','uR1','uVP','uC','uEye','uI']);
+  const glow=glProg(gl,SH_GLOW_V,SH_GLOW_F,['aQ'],['uC0','uRt','uUp','uS','uVP','uC','uI']);
+  G3={gl,lit,beam,glow,scene:buildScene(gl),W:0,H:0,lab:$('s3lab').getContext('2d'),
+   SP:new Float32Array(36),SD:new Float32Array(36),SC:new Float32Array(36),SX:new Float32Array(48),PP:new Float32Array(6),PC:new Float32Array(6)};
+ }catch(e){console.error(e);G3=null;G3fail=true;return false}
+ // керування камерою
+ let drag=null;
+ cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};cv.classList.add('drag');try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+ cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};
+  CAM.yaw-=dx*0.006;CAM.pitch=clamp(CAM.pitch+dy*0.005,-0.05,1.4);CAMG.yaw=CAM.yaw;CAMG.pitch=CAM.pitch});
+ const end=()=>{drag=null;cv.classList.remove('drag')};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+ cv.addEventListener('dblclick',()=>camPreset('hall'));
+ return true}
+
+function draw3D(V,now,haze){
+ const g=G3,gl=g.gl,cv=gl.canvas,dpr=Math.min(window.devicePixelRatio||1,1.5);
+ const W=Math.max(2,Math.round(cv.clientWidth*dpr)),H=Math.max(2,Math.round(cv.clientHeight*dpr));
+ if(!HAS_AR&&!document.getElementById('stageBox').classList.contains('fs')){const hh=Math.round(cv.clientWidth*0.43)+'px';if(cv.style.height!==hh)cv.style.height=hh}
+ if(W!==g.W||H!==g.H){cv.width=W;cv.height=H;const lc=$('s3lab');lc.width=W;lc.height=H;g.W=W;g.H=H}
+ // плавний рух камери до вибраного ракурсу
+ for(const k in CAMG)CAM[k]+=(CAMG[k]-CAM[k])*0.12;
+ const tgt=[0,CAM.ty,0],eye=[Math.sin(CAM.yaw)*Math.cos(CAM.pitch)*CAM.dist,CAM.ty+Math.sin(CAM.pitch)*CAM.dist,Math.cos(CAM.yaw)*Math.cos(CAM.pitch)*CAM.dist];
+ const View=mLook(eye,tgt,[0,1,0]),VP=mMul(mPersp(42*DEG,W/H,0.1,120),View);
+ // світло, промені, відблиски лінз
+ g.SC.fill(0);for(let i=0;i<12;i++){g.SX[i*4]=1.5;g.SX[i*4+1]=1.6}g.PC.fill(0);
+ let li=0;const beams=[],glows=[];
+ const setSpot=(p,d,c,outer,inner,gob,k)=>{g.SP.set(p,li*3);g.SD.set(d,li*3);g.SC.set([c[0]*k,c[1]*k,c[2]*k],li*3);
+  g.SX.set([Math.cos(outer),Math.cos(inner),gob,Math.tan(outer)],li*4);li++};
+ FX.forEach(f=>{const v=V[f.id],P=POS3[f.id],D=g.scene.dyn[f.id];
+  if(f.t==='spot'){const d=disp[f.id],an=spotAngles(d.pan,d.tilt),dir=dirFrom(an.th,an.ph);
+   const c=rgbOf(v).map(x=>x/255),a=v.dim/255*flash(v.str,now,false),half=(2.5+v.zoom/255*16)*DEG,soft=v.zoom/255;
+   const H0=mChain(mT(...P.hang),mRY(an.ph));D.yoke.M=H0;D.head.M=mChain(H0,mT(0,-0.42,0),mRX(an.th));D.lens.M=D.head.M;
+   const piv=[P.hang[0],P.hang[1]-0.42,P.hang[2]],o=V3.add(piv,V3.mul(dir,0.27));
+   D.lens.em=c.map(x=>x*a*2.2);
+   setSpot(o,dir,c,half*1.15,half*(0.75-0.55*soft),v.gobo<64?0:v.gobo<128?1:v.gobo<192?2:3,a*5);
+   if(a>0.01){const L=beamLen(o,dir);beams.push({p:o,d:dir,L,r0:0.07,r1:0.07+L*Math.tan(half),c,i:a*haze*0.55});glows.push({p:V3.add(o,V3.mul(dir,0.02)),s:0.32,c,i:a})}}
+  if(f.t==='wash'){const c=rgbOf(v).map(x=>x/255),a=v.dim/255*flash(v.str,now,false),half=(9+v.zoom/255*30)*DEG,o=V3.add(P.p,V3.mul(P.d,0.18));
+   D.lens.em=c.map(x=>x*a*2);setSpot(o,P.d,c,half,half*0.45,0,a*4.2);
+   if(a>0.01){const L=Math.min(7,beamLen(o,P.d));beams.push({p:o,d:P.d,L,r0:0.14,r1:0.14+L*Math.tan(half),c,i:a*haze*0.28});glows.push({p:V3.add(o,V3.mul(P.d,0.02)),s:0.4,c,i:a*0.8})}}
+  if(f.t==='fresnel'){const c=[1,0.77,0.51],a=v.dim/255,o=V3.add(P.p,V3.mul(P.d,0.27));
+   D.lens.em=c.map(x=>x*a*2);setSpot(o,P.d,c,19*DEG,9*DEG,0,a*16);
+   if(a>0.01){beams.push({p:o,d:P.d,L:beamLen(o,P.d),r0:0.13,r1:0.13+beamLen(o,P.d)*Math.tan(19*DEG),c,i:a*haze*0.07});glows.push({p:o,s:0.35,c,i:a*0.8})}}
+  if(f.t==='strobe'){const on=flash(v.rate,now,true)*v.dim/255,soft=$('softStrobe').checked?0.45:0.85,k=f.id==='ST1'?0:1;
+   g.PP.set([P.p[0],P.p[1]-0.3,P.p[2]+0.6],k*3);g.PC.set([on*soft*9,on*soft*9,on*soft*9],k*3);D.lens.em=[on*3,on*3,on*3];
+   if(on>0.02)glows.push({p:[P.p[0],P.p[1],P.p[2]+0.2],s:3.2,c:[1,1,1],i:on*soft*0.9})}});
+ // непрозора геометрія з освітленням
+ gl.viewport(0,0,W,H);gl.clearColor(0.015,0.015,0.02,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);gl.disable(gl.CULL_FACE);
+ const L=g.lit,u=L.u;gl.useProgram(L.p);gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);
+ gl.uniformMatrix4fv(u.uVP,false,VP);gl.uniform3fv(u.uSP,g.SP);gl.uniform3fv(u.uSD,g.SD);gl.uniform3fv(u.uSC,g.SC);gl.uniform4fv(u.uSX,g.SX);
+ gl.uniform3fv(u.uPP,g.PP);gl.uniform3fv(u.uPC,g.PC);gl.uniform3f(u.uAmb,0.035,0.037,0.045);
+ const drawM=m=>{gl.bindBuffer(gl.ARRAY_BUFFER,m.b);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);
+  gl.uniformMatrix4fv(u.uM,false,m.M);gl.uniform3fv(u.uCol,m.col);gl.uniform3fv(u.uEmis,m.em);gl.drawArrays(gl.TRIANGLES,0,m.n)};
+ g.scene.stat.forEach(drawM);Object.values(g.scene.dyn).forEach(D=>Object.values(D).forEach(drawM));
+ gl.disableVertexAttribArray(1);
+ // об'ємні промені і відблиски — адитивно, без запису глибини
+ gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);
+ const B=g.beam;gl.useProgram(B.p);gl.uniformMatrix4fv(B.u.uVP,false,VP);gl.uniform3fv(B.u.uEye,eye);
+ gl.bindBuffer(gl.ARRAY_BUFFER,g.scene.coneB);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+ beams.forEach(b=>{const rf=Math.abs(b.d[1])>0.9?[1,0,0]:[0,1,0],uu=V3.norm(V3.cross(b.d,rf)),vv=V3.cross(b.d,uu);
+  gl.uniform3fv(B.u.uA,b.p);gl.uniform3fv(B.u.uD,b.d);gl.uniform3fv(B.u.uU,uu);gl.uniform3fv(B.u.uV,vv);
+  gl.uniform1f(B.u.uL,b.L);gl.uniform1f(B.u.uR0,b.r0);gl.uniform1f(B.u.uR1,b.r1);gl.uniform3fv(B.u.uC,b.c);gl.uniform1f(B.u.uI,b.i);
+  gl.drawArrays(gl.TRIANGLES,0,g.scene.coneN)});
+ const Gp=g.glow;gl.useProgram(Gp.p);gl.uniformMatrix4fv(Gp.u.uVP,false,VP);gl.uniform3f(Gp.u.uRt,View[0],View[4],View[8]);gl.uniform3f(Gp.u.uUp,View[1],View[5],View[9]);
+ gl.bindBuffer(gl.ARRAY_BUFFER,g.scene.quadB);gl.vertexAttribPointer(0,2,gl.FLOAT,false,8,0);
+ glows.forEach(o=>{gl.uniform3fv(Gp.u.uC0,o.p);gl.uniform1f(Gp.u.uS,o.s);gl.uniform3fv(Gp.u.uC,o.c);gl.uniform1f(Gp.u.uI,o.i);gl.drawArrays(gl.TRIANGLES,0,6)});
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ // підписи приладів
+ const lc=g.lab;lc.clearRect(0,0,W,H);
+ if($('lab3d').checked){lc.font=`${Math.round(11*dpr)}px system-ui,sans-serif`;lc.textAlign='center';lc.textBaseline='middle';
+  FX.forEach(f=>{const P=POS3[f.id];let p;
+   if(f.t==='spot')p=[P.hang[0],P.hang[1]+0.75,P.hang[2]];else if(f.t==='wash')p=[P.p[0],P.p[1]+0.45,P.p[2]+0.2];
+   else if(f.t==='strobe')p=[P.p[0],P.p[1]+0.75,P.p[2]];else p=[P.p[0],P.p[1]-0.5,P.p[2]];
+   const x=VP[0]*p[0]+VP[4]*p[1]+VP[8]*p[2]+VP[12],y=VP[1]*p[0]+VP[5]*p[1]+VP[9]*p[2]+VP[13],w=VP[3]*p[0]+VP[7]*p[1]+VP[11]*p[2]+VP[15];
+   if(w<0.2)return;const sx=(x/w*0.5+0.5)*W,sy=(1-(y/w*0.5+0.5))*H;if(sx<-20||sx>W+20||sy<-20||sy>H+20)return;
+   const tw=lc.measureText(f.id).width+8*dpr;lc.fillStyle='rgba(0,0,0,.55)';lc.fillRect(sx-tw/2,sy-8*dpr,tw,16*dpr);lc.fillStyle='#c9ccd6';lc.fillText(f.id,sx,sy)})}
+ // мініатюра
+ if($('mini').classList.contains('show')){const m=$('miniCv'),mc=m.getContext('2d');mc.drawImage(cv,0,0,m.width,m.height);mc.drawImage($('s3lab'),0,0,m.width,m.height)}}
+
+/* --- перемикач 2D / 3D --- */
+const VKEY=KEY+'-view';
+function setView(v){
+ if(v==='3d'&&!init3D()){v='2d';$('v3d').disabled=true;$('viewNote').textContent='3D-вигляд недоступний: цей браузер не підтримує WebGL. Показано 2D.'}
+ VIEW=v;$('v3d').checked=v==='3d';$('v2d').checked=v==='2d';
+ $('stage').style.display=v==='3d'?'none':'block';$('s3wrap').style.display=v==='3d'?'block':'none';$('camBar').style.display=v==='3d'?'inline-flex':'none';$('fsCam').style.display=v==='3d'?'inline-flex':'none';
+ $('miniSvg').style.display=v==='3d'?'none':'block';$('miniCv').style.display=v==='3d'?'block':'none';
+ try{localStorage.setItem(VKEY,v)}catch(e){}}
+document.querySelectorAll('input[name=view]').forEach(r=>r.addEventListener('change',()=>setView(r.value)));
+document.querySelectorAll('[data-cam]').forEach(b=>b.addEventListener('click',()=>camPreset(b.dataset.cam)));
+document.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>{CAMG.dist=clamp(CAMG.dist*(b.dataset.zoom==='in'?0.82:1.22),5,28)}));
+(function(){let v='3d';try{v=localStorage.getItem(VKEY)||'3d'}catch(e){}setView(v)})();
+
+/* ---------- приклад шоу (закодовано, щоб програму не було видно) ---------- */
+const DEMO_PKG="==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";
+
+/* ---------- старт ---------- */
+buildPatchTable();renderPatch();renderChips();renderProg();renderScenes();$('scNum').value=nextNum();
+setMode('auto');newChase();renderCues();renderMusic();
+
+/* ---------- попередження про мерехтіння: анімація стартує лише після згоди ---------- */
+const warnHTML=$('warnBox').innerHTML;
+function bindWarn(){
+ $('warnOk').focus();
+ $('warnOk').addEventListener('click',()=>{$('warnOv').remove();document.body.classList.remove('locked');requestAnimationFrame(render)});
+ $('warnNo').addEventListener('click',()=>{
+  $('warnBox').innerHTML=`<div class="big">УВАГА</div>
+   <p>Ви відмовилися від виконання цієї практичної роботи.</p>
+   <p><b>Закрийте цю сторінку і повідомте викладача</b> — він надасть вам альтернативне завдання.</p>
+   <div class="btns"><button id="warnBack">Повернутися до попередження</button></div>`;
+  $('warnBack').addEventListener('click',()=>{$('warnBox').innerHTML=warnHTML;bindWarn()})});
+}
+bindWarn();
+
+/* ---------- плаваюче зменшене зображення сцени ---------- */
+const mini=$('mini'),pill=$('miniPill'),MKEY=KEY+'-mini';
+let stageVisible=true,curTab='task',miniHidden=false,mpos=null;
+try{const o=JSON.parse(localStorage.getItem(MKEY)||'null');if(o){mpos=o.pos||null;if(o.big)mini.classList.add('big');miniHidden=!!o.hidden}}catch(e){}
+$('miniSize').textContent=mini.classList.contains('big')?'Менше':'Більше';
+function miniSave(){try{localStorage.setItem(MKEY,JSON.stringify({pos:mpos,big:mini.classList.contains('big'),hidden:miniHidden}))}catch(e){}}
+function miniPlace(){if(!mpos){mini.style.left=mini.style.top='';mini.style.right=mini.style.bottom='16px';return}
+ const w=mini.offsetWidth||360,h=mini.offsetHeight||180;
+ mpos.x=clamp(mpos.x,4,Math.max(4,innerWidth-w-4));mpos.y=clamp(mpos.y,4,Math.max(4,innerHeight-h-4));
+ mini.style.right=mini.style.bottom='auto';mini.style.left=mpos.x+'px';mini.style.top=mpos.y+'px'}
+function updMini(){const need=!$('warnOv')&&!stageVisible&&!fsOn()&&!['task','help'].includes(curTab);
+ mini.classList.toggle('show',need&&!miniHidden);pill.classList.toggle('show',need&&miniHidden);if(need&&!miniHidden)miniPlace()}
+new IntersectionObserver(es=>{stageVisible=es[0].isIntersecting;updMini()},{threshold:0.25}).observe($('stageView'));
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b){curTab=b.dataset.t;updMini()}});
+$('warnOv').addEventListener('click',()=>setTimeout(updMini,0));
+$('miniHide').addEventListener('click',()=>{miniHidden=true;miniSave();updMini()});
+pill.addEventListener('click',()=>{miniHidden=false;miniSave();updMini()});
+$('miniSize').addEventListener('click',()=>{const big=mini.classList.toggle('big');$('miniSize').textContent=big?'Менше':'Більше';miniPlace();miniSave()});
+const toStage=()=>$('stageView').scrollIntoView({behavior:'smooth',block:'start'});
+$('miniUp').addEventListener('click',toStage);$('miniSvg').addEventListener('click',toStage);$('miniCv').addEventListener('click',toStage);
+let drag=null;
+$('miniBar').addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;const r=mini.getBoundingClientRect();
+ drag={dx:e.clientX-r.left,dy:e.clientY-r.top};$('miniBar').setPointerCapture(e.pointerId)});
+$('miniBar').addEventListener('pointermove',e=>{if(!drag)return;mpos={x:e.clientX-drag.dx,y:e.clientY-drag.dy};miniPlace()});
+$('miniBar').addEventListener('pointerup',()=>{if(drag){drag=null;miniSave()}});
+addEventListener('resize',()=>{if(mini.classList.contains('show'))miniPlace()});
+</script>
+</body>
+</html>
